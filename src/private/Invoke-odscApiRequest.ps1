@@ -46,7 +46,7 @@ function Invoke-odscApiRequest {
         $Response = $null
 
         try {
-            $Response = Invoke-WebRequest @Request
+            $Response = Invoke-WebRequest @Request -UseBasicParsing
             $Response = ConvertFrom-Json $([string]::new($Response.Content))
         } catch {
             Write-Error $_
