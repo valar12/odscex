@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.4.1
+
+* Fixed a security warning in WindowsPowerShell triggered by `Invoke-WebRequest` calls missing the `-UseBasicParsing` parameter.
+
 ## 0.4.0
 
 * Add feature to create / get / remove shortcuts in OneDrive's subfolder
