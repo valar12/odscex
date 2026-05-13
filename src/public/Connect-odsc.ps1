@@ -88,7 +88,7 @@ function Connect-odsc {
 
     end {
         if ($Token) {
-            Write-Host "Connected to $($script:ODSCloudEnvironment) using $($script:ODSGraphEndpoint)."
+            Write-Information "Connected to $($script:ODSCloudEnvironment) using $($script:ODSGraphEndpoint)." -InformationAction Continue
         }
     }
 }

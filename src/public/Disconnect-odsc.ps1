@@ -9,6 +9,6 @@ function Disconnect-odsc {
     }
 
     end {
-        Write-Host 'Disconnected.'
+        Write-Information 'Disconnected.' -InformationAction Continue
     }
 }

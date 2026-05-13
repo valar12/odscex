@@ -1,5 +1,6 @@
 function Resolve-odscUserIdentity {
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [Alias('UserPrincipalName', 'Mail')]
@@ -10,13 +11,15 @@ function Resolve-odscUserIdentity {
         [string] $InputUserObjectId
     )
 
-    if ($InputUserObjectId) {
-        return $InputUserObjectId
-    }
+    process {
+        if ($InputUserObjectId) {
+            return $InputUserObjectId
+        }
 
-    if ($InputUserPrincipalName) {
-        return $InputUserPrincipalName
-    }
+        if ($InputUserPrincipalName) {
+            return $InputUserPrincipalName
+        }
 
-    Write-Error 'A user principal name or object ID is required.' -ErrorAction Stop
+        Write-Error 'A user principal name or object ID is required.' -ErrorAction Stop
+    }
 }

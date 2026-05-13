@@ -70,11 +70,20 @@ function Invoke-odscShortcutAssignment {
                 }
 
                 if ($DocumentLibraryId) { $Parameters.DocumentLibraryId = $DocumentLibraryId } else { $Parameters.DocumentLibrary = $DocumentLibrary }
-                if ($UserObjectId) { $Parameters.UserObjectId = $UserObjectId } else { $Parameters.UserPrincipalName = $UserPrincipalName }
+                if ($UserObjectId) {
+                    $Parameters.UserObjectId = $UserObjectId
+                    $UserIdentifier = $UserObjectId
+                } else {
+                    $Parameters.UserPrincipalName = $UserPrincipalName
+                    $UserIdentifier = $UserPrincipalName
+                }
+                $Parameters.Confirm = $false
 
-                $Result = Set-odscShortcutState @Parameters
-                $Results.Add($Result) | Out-Null
-                $Result
+                if ($PSCmdlet.ShouldProcess("${UserIdentifier}'s OneDrive", "Set shortcut '$ShortcutName' to state '$State'")) {
+                    $Result = Set-odscShortcutState @Parameters
+                    $Results.Add($Result) | Out-Null
+                    $Result
+                }
             } catch {
                 $Failure = [pscustomobject]@{
                     PSTypeName = 'odsc.ShortcutResult'

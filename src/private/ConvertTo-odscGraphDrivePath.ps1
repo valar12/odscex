@@ -1,5 +1,6 @@
 function ConvertTo-odscGraphDrivePath {
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $false)]
         [AllowNull()]

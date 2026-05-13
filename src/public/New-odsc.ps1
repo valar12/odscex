@@ -49,16 +49,18 @@ function New-odsc {
             AllowAmbiguousLibraryMatch = $AllowAmbiguousLibraryMatch
         }
 
-        if ($WhatIfPreference) {
-            $Parameters.WhatIf = $true
-        }
-
         if ($PsCmdlet.ParameterSetName -eq 'UserObjectId') {
             $Parameters.UserObjectId = $UserObjectId
+            $User = $UserObjectId
         } else {
             $Parameters.UserPrincipalName = $UserPrincipalName
+            $User = $UserPrincipalName
         }
 
-        Set-odscShortcutState @Parameters
+        $Parameters.Confirm = $false
+
+        if ($PSCmdlet.ShouldProcess("${User}'s OneDrive", "Create shortcut '$ShortcutName'")) {
+            Set-odscShortcutState @Parameters
+        }
     }
 }
