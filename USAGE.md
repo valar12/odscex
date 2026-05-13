@@ -1,9 +1,12 @@
 # USAGE
 
 #### Table of Contents
-*   [Module Documentation](#module-documentation)
-*   [Prerequisites](#prerequisites)
-*   [Examples](#examples)
+* [Module Documentation](#module-documentation)
+* [Prerequisites](#prerequisites)
+* [Single-user examples](#single-user-examples)
+* [Organization-scale examples](#organization-scale-examples)
+* [Desired-state plan files](#desired-state-plan-files)
+* [Operational guidance](#operational-guidance)
 
 ----------
 
@@ -19,18 +22,20 @@ Get-Help -Full <commandName>
 
 ## Prerequisites
 
-To use this module you need to create an Azure AD application. Once you have created the application you will need to perform the following tasks:
+To use this module you need to create an Azure AD / Microsoft Entra application. Once you have created the application you will need to perform the following tasks:
 
-*   Get the Client ID (Application ID) of the application
-*   Get the Tenant ID of the Azure AD environment
-*   Create a Client Secret or Client Certificate for the application
-*   Add the following Microsoft Graph Application Permissions to the application: `Files.ReadWrite.All`, `Sites.ReadWrite.All`, `User.Read.All`
-*   If you are using a Client Certificate you must have it stored on your workstation or loaded in your workstation's certificate store
+* Get the Client ID (Application ID) of the application.
+* Get the Tenant ID of the Azure AD environment.
+* Create a Client Secret or Client Certificate for the application.
+* Add Microsoft Graph application permissions required by the commands you plan to run. Broad deployments commonly require `Files.ReadWrite.All`, `Sites.ReadWrite.All`, and `User.Read.All`; prefer least-privilege and selected-permission models where feasible.
+* If you target groups, grant permissions that allow reading group membership.
+* If you are using a Client Certificate you must have it stored on your workstation or loaded in your workstation's certificate store.
+
+Use `Test-odscPermission` before a large deployment to verify Graph connectivity, site access, and user drive access.
 
 ----------
 
-## Module Documentation
-## Examples
+## Single-user examples
 
 ### Connecting with a Client Secret
 
@@ -41,7 +46,7 @@ Connect-odsc -TenantId "00000000-0000-0000-0000-000000000000" -ClientId "0000000
 ### Connecting with a Client Certificate
 
 ```powershell
-Connect-odsc -TenantId "00000000-0000-0000-0000-000000000000" -ClientId "00000000-0000-0000-0000-000000000000" -ClientCertificate (Get-Item -Path 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000)
+Connect-odsc -TenantId "00000000-0000-0000-0000-000000000000" -ClientId "00000000-0000-0000-0000-000000000000" -ClientCertificate (Get-Item -Path 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000')
 ```
 
 ### Disconnecting
@@ -56,16 +61,16 @@ Disconnect-odsc
 Get-odscDrive -UserPrincipalName "user@contoso.com"
 ```
 
+### Creating or converging a shortcut to a desired state
+
+```powershell
+Set-odscShortcutState -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Working Document Library" -UserPrincipalName "user@contoso.com" -ShortcutName "Working" -State Present -ConflictAction Skip
+```
+
 ### Creating a new Shortcut to a Document Library
 
 ```powershell
 New-odsc -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Working Document Library" -UserPrincipalName "user@contoso.com"
-```
-
-### Creating a new Shortcut to a Document Library with a custom Name
-
-```powershell
-New-odsc -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Working Document Library" -UserPrincipalName "user@contoso.com" -ShortcutName "Working DL"
 ```
 
 ### Creating a new Shortcut to a Subfolder in a Document Library
@@ -74,13 +79,8 @@ New-odsc -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrar
 New-odsc -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Working Document Library" -FolderPath "Working Folder" -UserPrincipalName "user@contoso.com"
 ```
 
-### Creating a new Shortcut to a Subfolder in a Document Library with a custom Name
+### Creating a shortcut in a subfolder of the user's OneDrive
 
-```powershell
-New-odsc -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Working Document Library" -FolderPath "Working Folder" -UserPrincipalName "user@contoso.com" -ShortcutName "Working"
-```
-
-### Creating a new Shortcut to the root of a document library in a subfolder of the user's OneDrive
 ```powershell
 New-odsc -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Working Document Library" -RelativePath "subfolder1/subfolder2" -UserPrincipalName "user@contoso.com"
 ```
@@ -91,20 +91,92 @@ New-odsc -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrar
 Get-odsc -ShortcutName "Working Folder" -UserPrincipalName "user@contoso.com"
 ```
 
-### Getting an existing Shortcut in a subfolder by Name
-
-```powershell
-Get-odsc -ShortcutName "Working Folder" -RelativePath "subfolder1/subfolder2" -UserPrincipalName "user@contoso.com"
-```
-
 ### Removing an existing Shortcut by Name
 
 ```powershell
-Remove-odsc -ShortcutName "Working Folder" -UserPrincipalName "user@contoso.com"
+Remove-odsc -ShortcutName "Working Folder" -UserPrincipalName "user@contoso.com" -PassThru
 ```
 
-### Removing an existing Shortcut placed in a subfolder by Name
+----------
+
+## Organization-scale examples
+
+### Target a group
 
 ```powershell
-Remove-odsc -ShortcutName "Working Folder" -RelativePath "subfolder1/subfolder2" -UserPrincipalName "user@contoso.com"
+$Users = Get-odscTargetUser -GroupId "00000000-0000-0000-0000-000000000000"
+Invoke-odscShortcutAssignment -User $Users -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Documents" -ShortcutName "Working" -State Present -ConflictAction Skip -ReportPath ".\odsc-results.csv"
 ```
+
+### Target users from CSV
+
+```powershell
+$Users = Get-odscTargetUser -CsvPath ".\users.csv"
+Invoke-odscShortcutAssignment -User $Users -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Documents" -ShortcutName "Working" -State Present -ReportPath ".\odsc-results.json" -OutputFormat Json
+```
+
+The CSV should contain either `UserPrincipalName`, `UserObjectId`, or `Id` columns.
+
+### Target filtered users
+
+```powershell
+$Users = Get-odscTargetUser -Filter "accountEnabled eq true"
+Invoke-odscShortcutAssignment -User $Users -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Documents" -ShortcutName "Working"
+```
+
+### Remove a shortcut from a group
+
+```powershell
+$Users = Get-odscTargetUser -GroupId "00000000-0000-0000-0000-000000000000"
+Invoke-odscShortcutAssignment -User $Users -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Documents" -ShortcutName "Working" -State Absent -ReportPath ".\odsc-remove.csv"
+```
+
+----------
+
+## Desired-state plan files
+
+`Invoke-odscPlan` and `Invoke-odscApply` support JSON and PowerShell data files.
+
+### JSON example
+
+```json
+{
+  "shortcuts": [
+    {
+      "name": "HR Policies",
+      "siteUrl": "https://contoso.sharepoint.com/sites/HR",
+      "library": "Documents",
+      "folderPath": "Policies",
+      "oneDrivePath": "Company",
+      "state": "Present",
+      "target": {
+        "groupId": "00000000-0000-0000-0000-000000000000"
+      }
+    }
+  ]
+}
+```
+
+Apply the plan:
+
+```powershell
+Invoke-odscApply -Path ".\shortcuts.json" -ReportPath ".\shortcut-apply.csv"
+```
+
+Preview the plan without applying it:
+
+```powershell
+Invoke-odscPlan -Path ".\shortcuts.json"
+Invoke-odscApply -Path ".\shortcuts.json" -WhatIf
+```
+
+----------
+
+## Operational guidance
+
+* Use `Set-odscShortcutState` or `Invoke-odscShortcutAssignment` for repeatable runs. They report `Compliant` when the shortcut already points to the requested target.
+* Use `-ConflictAction Skip`, `Replace`, `Rename`, or `Error` to decide what happens when a same-named item points elsewhere.
+* Use `-ReportPath` and `-OutputFormat Csv|Json|Clixml` for audit evidence.
+* Use `-ResumeFrom` to restart a failed assignment from a specific user index.
+* The Microsoft Graph helper follows `@odata.nextLink` when callers request all pages and retries transient `429`, `500`, `502`, `503`, and `504` responses.
+* Advanced callers can use `Invoke-odscGraphBatch` to submit up to 20 Graph subrequests in a single JSON batch.
