@@ -49,6 +49,7 @@ function Get-odscTargetUser {
                 }
             }
             'AllUsers' {
+                $null = $AllUsers
                 Invoke-odscApiRequest -Resource 'users?$select=id,userPrincipalName,mail,accountEnabled' -Method ([Microsoft.PowerShell.Commands.WebRequestMethod]::Get) -AllPages | ForEach-Object {
                     [pscustomobject]@{
                         UserPrincipalName = $_.userPrincipalName

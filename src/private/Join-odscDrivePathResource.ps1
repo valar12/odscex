@@ -1,5 +1,6 @@
 function Join-odscDrivePathResource {
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory = $true)]
         [string] $User,

@@ -16,6 +16,10 @@ function Invoke-odscApply {
     $Results = New-Object System.Collections.Generic.List[object]
 
     foreach ($Plan in $Plans) {
+        if (-not $PSCmdlet.ShouldProcess("plan '$($Plan.Name)'", "Apply shortcut state '$($Plan.State)'")) {
+            continue
+        }
+
         $Target = $Plan.Target
         if ($Target.groupId) {
             $Users = @(Get-odscTargetUser -GroupId $Target.groupId)
@@ -29,7 +33,7 @@ function Invoke-odscApply {
             Write-Error "Plan '$($Plan.Name)' does not define a supported target." -ErrorAction Stop
         }
 
-        $Assignment = Invoke-odscShortcutAssignment -User $Users -Uri $Plan.Uri -DocumentLibrary $Plan.DocumentLibrary -DocumentLibraryId $Plan.DocumentLibraryId -FolderPath $Plan.FolderPath -RelativePath $Plan.RelativePath -ShortcutName $Plan.Name -State $Plan.State -WhatIf:$WhatIfPreference
+        $Assignment = Invoke-odscShortcutAssignment -User $Users -Uri $Plan.Uri -DocumentLibrary $Plan.DocumentLibrary -DocumentLibraryId $Plan.DocumentLibraryId -FolderPath $Plan.FolderPath -RelativePath $Plan.RelativePath -ShortcutName $Plan.Name -State $Plan.State -Confirm:$false
         foreach ($Result in $Assignment) {
             $Results.Add($Result) | Out-Null
             $Result

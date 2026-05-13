@@ -5,6 +5,8 @@
 * Added `Connect-odsc -Cloud` support for Microsoft Graph Global, GCC, GCC High, DoD, and China endpoints.
 * Added Graph endpoint selection for national clouds so API requests use the connected cloud's Microsoft Graph root endpoint.
 * Added optional `-GraphEndpoint` override for advanced/custom national-cloud endpoint scenarios.
+* Fixed shortcut creation with `-RelativePath` so shortcuts are created directly in the target OneDrive folder.
+* Resolved PowerShell Script Analyzer warnings before publishing the release to PowerShell Gallery.
 
 ## 0.5.0
 
