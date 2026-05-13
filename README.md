@@ -1,9 +1,9 @@
 # odsc PowerShell Module
 
-[![GitHub Release](https://badge.fury.io/gh/innovara%2Fodsc.svg)](https://github.com/innovara/odsc/releases)
+[![GitHub Release](https://badge.fury.io/gh/innovara%2Fodsc.svg)](https://github.com/valar12/odsc/releases)
 [![PowerShell Gallery Release](https://img.shields.io/powershellgallery/v/odsc)](https://www.powershellgallery.com/packages/odsc)
-[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/innovara/odsc/blob/main/LICENSE.md)
-[![GitHub Last Commit](https://img.shields.io/github/last-commit/innovara/odsc)](https://github.com/innovara/odsc/commits/main)
+[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/valar12/odsc/blob/main/LICENSE.md)
+[![GitHub Last Commit](https://img.shields.io/github/last-commit/innovara/odsc)](https://github.com/valar12/odsc/commits/main)
 
 #### Table of Contents
 
