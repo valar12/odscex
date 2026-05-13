@@ -141,25 +141,19 @@ function Set-odscShortcutState {
         }
 
         if ($PSCmdlet.ShouldProcess("${User}'s OneDrive", "Creating shortcut '$ShortcutName'")) {
+            if ($RelativePath) {
+                $FolderResponse = Resolve-odscDriveFolderPath -User $User -RelativePath $RelativePath -Create
+                if (-not $FolderResponse) {
+                    Write-Error "Error resolving OneDrive folder path '$RelativePath' for ${User}." -ErrorAction Stop
+                }
+
+                $CreateRequest.Resource = "users/${User}/drive/items/$($FolderResponse.id)/children"
+            }
+
             $ShortcutResponse = Invoke-odscApiRequest @CreateRequest
 
             if (!($ShortcutResponse)) {
                 Write-Error "Error creating OneDrive shortcut '$($ShortcutName)' for ${User}." -ErrorAction Stop
-            }
-
-            if ($RelativePath) {
-                $FolderResponse = Resolve-odscDriveFolderPath -User $User -RelativePath $RelativePath -Create
-                $MoveRequest = @{
-                    Resource = "users/${User}/drive/items/$($ShortcutResponse.id)"
-                    Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch
-                    DoNotUsePrefer = $true
-                    Body = @{
-                        parentReference = @{
-                            id = $FolderResponse.id
-                        }
-                    } | ConvertTo-Json -Depth 10
-                }
-                $ShortcutResponse = Invoke-odscApiRequest @MoveRequest
             }
 
             $RenameRequest = @{
