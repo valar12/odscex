@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 0.5.1
+
+* Added `Connect-odsc -Cloud` support for Microsoft Graph Global, GCC, GCC High, DoD, and China endpoints.
+* Added Graph endpoint selection for national clouds so API requests use the connected cloud's Microsoft Graph root endpoint.
+* Added optional `-GraphEndpoint` override for advanced/custom national-cloud endpoint scenarios.
+
+## 0.5.0
+
+* Added organization-scale shortcut assignment commands: `Get-odscTargetUser`, `Set-odscShortcutState`, `Invoke-odscShortcutAssignment`, `Invoke-odscPlan`, `Invoke-odscApply`, `Invoke-odscGraphBatch`, and `Test-odscPermission`.
+* Added idempotent desired-state behavior with configurable conflict actions.
+* Added Microsoft Graph retry/backoff handling, pagination support, and a JSON batch helper.
+* Added safer OneDrive path encoding, folder-path resolution, and exact document-library matching with ambiguity protection.
+* Added pipeline-friendly user parameters, structured shortcut result objects, and CSV/JSON/CLIXML report output.
+* Improved module import style and bumped the module version to 0.5.0.
+
 ## 0.4.1
 
 * Fixed a security warning in WindowsPowerShell triggered by `Invoke-WebRequest` calls missing the `-UseBasicParsing` parameter.
