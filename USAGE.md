@@ -3,7 +3,6 @@
 #### Table of Contents
 * [Module Documentation](#module-documentation)
 * [Prerequisites](#prerequisites)
-* [National cloud connections](#national-cloud-connections)
 * [Single-user examples](#single-user-examples)
 * [Organization-scale examples](#organization-scale-examples)
 * [Desired-state plan files](#desired-state-plan-files)
