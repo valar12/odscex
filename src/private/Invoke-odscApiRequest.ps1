@@ -45,7 +45,8 @@ function Invoke-odscApiRequest {
             $Headers.Prefer = 'apiversion=2.1'
         }
 
-        $Uri = if ($Resource -match '^https://') { $Resource } else { "https://graph.microsoft.com/v1.0/$($Resource)" }
+        $GraphEndpoint = if ($script:ODSGraphEndpoint) { $script:ODSGraphEndpoint.TrimEnd('/') } else { 'https://graph.microsoft.com' }
+        $Uri = if ($Resource -match '^https://') { $Resource } else { "$GraphEndpoint/v1.0/$($Resource)" }
         $Results = New-Object System.Collections.Generic.List[object]
         $NextUri = $Uri
 

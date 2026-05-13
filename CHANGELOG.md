@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.5.1
+
+* Added `Connect-odsc -Cloud` support for Microsoft Graph Global, GCC, GCC High, DoD, and China endpoints.
+* Added Graph endpoint selection for national clouds so API requests use the connected cloud's Microsoft Graph root endpoint.
+* Added optional `-GraphEndpoint` override for advanced/custom national-cloud endpoint scenarios.
+
 ## 0.5.0
 
 * Added organization-scale shortcut assignment commands: `Get-odscTargetUser`, `Set-odscShortcutState`, `Invoke-odscShortcutAssignment`, `Invoke-odscPlan`, `Invoke-odscApply`, `Invoke-odscGraphBatch`, and `Test-odscPermission`.

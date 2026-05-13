@@ -35,6 +35,30 @@ Use `Test-odscPermission` before a large deployment to verify Graph connectivity
 
 ----------
 
+## National cloud connections
+
+Use `Connect-odsc -Cloud` to select the Microsoft cloud environment before running shortcut commands. Supported values are `Global`, `GCC`, `GCCHigh`, `DoD`, and `China`. The module requests tokens for the selected Microsoft Graph resource and stores the selected endpoint for all subsequent Graph API requests.
+
+### Connecting to Microsoft 365 GCC
+
+```powershell
+Connect-odsc -Cloud GCC -TenantId "00000000-0000-0000-0000-000000000000" -ClientId "00000000-0000-0000-0000-000000000000" -ClientSecret (ConvertTo-SecureString -String "000000000000000000000000000" -AsPlainText -Force)
+```
+
+### Connecting to Microsoft 365 GCC High
+
+```powershell
+Connect-odsc -Cloud GCCHigh -TenantId "00000000-0000-0000-0000-000000000000" -ClientId "00000000-0000-0000-0000-000000000000" -ClientCertificate (Get-Item -Path 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000')
+```
+
+### Connecting to Microsoft 365 DoD
+
+```powershell
+Connect-odsc -Cloud DoD -TenantId "00000000-0000-0000-0000-000000000000" -ClientId "00000000-0000-0000-0000-000000000000" -ClientCertificate (Get-Item -Path 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000')
+```
+
+----------
+
 ## Single-user examples
 
 ### Connecting with a Client Secret
