@@ -15,7 +15,12 @@
 Documentation for all public commands for the module can be viewed:
 
 ```powershell
-Get-Help -Full <commandName>
+$HelpParameters = @{
+    Name = '<commandName>'
+    Full = $true
+}
+
+Get-Help @HelpParameters
 ```
 
 ----------
@@ -42,19 +47,54 @@ Use `Connect-odscex -Cloud` to select the Microsoft cloud environment before run
 ### Connecting to Microsoft 365 GCC
 
 ```powershell
-Connect-odscex -Cloud GCC -TenantId "00000000-0000-0000-0000-000000000000" -ClientId "00000000-0000-0000-0000-000000000000" -ClientSecret (ConvertTo-SecureString -String "000000000000000000000000000" -AsPlainText -Force)
+$ClientSecretParameters = @{
+    String = '000000000000000000000000000'
+    AsPlainText = $true
+    Force = $true
+}
+
+$ConnectParameters = @{
+    Cloud = 'GCC'
+    TenantId = '00000000-0000-0000-0000-000000000000'
+    ClientId = '00000000-0000-0000-0000-000000000000'
+    ClientSecret = ConvertTo-SecureString @ClientSecretParameters
+}
+
+Connect-odscex @ConnectParameters
 ```
 
 ### Connecting to Microsoft 365 GCC High
 
 ```powershell
-Connect-odscex -Cloud GCCHigh -TenantId "00000000-0000-0000-0000-000000000000" -ClientId "00000000-0000-0000-0000-000000000000" -ClientCertificate (Get-Item -Path 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000')
+$CertificateParameters = @{
+    Path = 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000'
+}
+$Certificate = Get-Item @CertificateParameters
+$ConnectParameters = @{
+    Cloud = 'GCCHigh'
+    TenantId = '00000000-0000-0000-0000-000000000000'
+    ClientId = '00000000-0000-0000-0000-000000000000'
+    ClientCertificate = $Certificate
+}
+
+Connect-odscex @ConnectParameters
 ```
 
 ### Connecting to Microsoft 365 DoD
 
 ```powershell
-Connect-odscex -Cloud DoD -TenantId "00000000-0000-0000-0000-000000000000" -ClientId "00000000-0000-0000-0000-000000000000" -ClientCertificate (Get-Item -Path 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000')
+$CertificateParameters = @{
+    Path = 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000'
+}
+$Certificate = Get-Item @CertificateParameters
+$ConnectParameters = @{
+    Cloud = 'DoD'
+    TenantId = '00000000-0000-0000-0000-000000000000'
+    ClientId = '00000000-0000-0000-0000-000000000000'
+    ClientCertificate = $Certificate
+}
+
+Connect-odscex @ConnectParameters
 ```
 
 ----------
@@ -64,13 +104,35 @@ Connect-odscex -Cloud DoD -TenantId "00000000-0000-0000-0000-000000000000" -Clie
 ### Connecting with a Client Secret
 
 ```powershell
-Connect-odscex -TenantId "00000000-0000-0000-0000-000000000000" -ClientId "00000000-0000-0000-0000-000000000000" -ClientSecret (ConvertTo-SecureString -String "000000000000000000000000000" -AsPlainText -Force)
+$ClientSecretParameters = @{
+    String = '000000000000000000000000000'
+    AsPlainText = $true
+    Force = $true
+}
+
+$ConnectParameters = @{
+    TenantId = '00000000-0000-0000-0000-000000000000'
+    ClientId = '00000000-0000-0000-0000-000000000000'
+    ClientSecret = ConvertTo-SecureString @ClientSecretParameters
+}
+
+Connect-odscex @ConnectParameters
 ```
 
 ### Connecting with a Client Certificate
 
 ```powershell
-Connect-odscex -TenantId "00000000-0000-0000-0000-000000000000" -ClientId "00000000-0000-0000-0000-000000000000" -ClientCertificate (Get-Item -Path 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000')
+$CertificateParameters = @{
+    Path = 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000'
+}
+$Certificate = Get-Item @CertificateParameters
+$ConnectParameters = @{
+    TenantId = '00000000-0000-0000-0000-000000000000'
+    ClientId = '00000000-0000-0000-0000-000000000000'
+    ClientCertificate = $Certificate
+}
+
+Connect-odscex @ConnectParameters
 ```
 
 ### Disconnecting
@@ -82,43 +144,87 @@ Disconnect-odscex
 ### Retrieving the properties of a Drive resource
 
 ```powershell
-Get-odscexDrive -UserPrincipalName "user@contoso.com"
+$DriveParameters = @{
+    UserPrincipalName = 'user@contoso.com'
+}
+
+Get-odscexDrive @DriveParameters
 ```
 
 ### Creating or converging a shortcut to a desired state
 
 ```powershell
-Set-odscexShortcutState -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Working Document Library" -UserPrincipalName "user@contoso.com" -ShortcutName "Working" -State Present -ConflictAction Skip
+$ShortcutStateParameters = @{
+    Uri = 'https://contoso.sharepoint.com/sites/WorkingSite'
+    DocumentLibrary = 'Working Document Library'
+    UserPrincipalName = 'user@contoso.com'
+    ShortcutName = 'Working'
+    State = 'Present'
+    ConflictAction = 'Skip'
+}
+
+Set-odscexShortcutState @ShortcutStateParameters
 ```
 
 ### Creating a new Shortcut to a Document Library
 
 ```powershell
-New-odscex -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Working Document Library" -UserPrincipalName "user@contoso.com"
+$ShortcutParameters = @{
+    Uri = 'https://contoso.sharepoint.com/sites/WorkingSite'
+    DocumentLibrary = 'Working Document Library'
+    UserPrincipalName = 'user@contoso.com'
+}
+
+New-odscex @ShortcutParameters
 ```
 
 ### Creating a new Shortcut to a Subfolder in a Document Library
 
 ```powershell
-New-odscex -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Working Document Library" -FolderPath "Working Folder" -UserPrincipalName "user@contoso.com"
+$ShortcutParameters = @{
+    Uri = 'https://contoso.sharepoint.com/sites/WorkingSite'
+    DocumentLibrary = 'Working Document Library'
+    FolderPath = 'Working Folder'
+    UserPrincipalName = 'user@contoso.com'
+}
+
+New-odscex @ShortcutParameters
 ```
 
 ### Creating a shortcut in a subfolder of the user's OneDrive
 
 ```powershell
-New-odscex -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Working Document Library" -RelativePath "subfolder1/subfolder2" -UserPrincipalName "user@contoso.com"
+$ShortcutParameters = @{
+    Uri = 'https://contoso.sharepoint.com/sites/WorkingSite'
+    DocumentLibrary = 'Working Document Library'
+    RelativePath = 'subfolder1/subfolder2'
+    UserPrincipalName = 'user@contoso.com'
+}
+
+New-odscex @ShortcutParameters
 ```
 
 ### Getting an existing Shortcut by Name
 
 ```powershell
-Get-odscex -ShortcutName "Working Folder" -UserPrincipalName "user@contoso.com"
+$ShortcutLookupParameters = @{
+    ShortcutName = 'Working Folder'
+    UserPrincipalName = 'user@contoso.com'
+}
+
+Get-odscex @ShortcutLookupParameters
 ```
 
 ### Removing an existing Shortcut by Name
 
 ```powershell
-Remove-odscex -ShortcutName "Working Folder" -UserPrincipalName "user@contoso.com" -PassThru
+$RemoveParameters = @{
+    ShortcutName = 'Working Folder'
+    UserPrincipalName = 'user@contoso.com'
+    PassThru = $true
+}
+
+Remove-odscex @RemoveParameters
 ```
 
 ----------
@@ -128,15 +234,43 @@ Remove-odscex -ShortcutName "Working Folder" -UserPrincipalName "user@contoso.co
 ### Target a group
 
 ```powershell
-$Users = Get-odscexTargetUser -GroupId "00000000-0000-0000-0000-000000000000"
-Invoke-odscexShortcutAssignment -User $Users -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Documents" -ShortcutName "Working" -State Present -ConflictAction Skip -ReportPath ".\odscex-results.csv"
+$TargetUserParameters = @{
+    GroupId = '00000000-0000-0000-0000-000000000000'
+}
+$Users = Get-odscexTargetUser @TargetUserParameters
+
+$AssignmentParameters = @{
+    User = $Users
+    Uri = 'https://contoso.sharepoint.com/sites/WorkingSite'
+    DocumentLibrary = 'Documents'
+    ShortcutName = 'Working'
+    State = 'Present'
+    ConflictAction = 'Skip'
+    ReportPath = '.\odscex-results.csv'
+}
+
+Invoke-odscexShortcutAssignment @AssignmentParameters
 ```
 
 ### Target users from CSV
 
 ```powershell
-$Users = Get-odscexTargetUser -CsvPath ".\users.csv"
-Invoke-odscexShortcutAssignment -User $Users -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Documents" -ShortcutName "Working" -State Present -ReportPath ".\odscex-results.json" -OutputFormat Json
+$TargetUserParameters = @{
+    CsvPath = '.\users.csv'
+}
+$Users = Get-odscexTargetUser @TargetUserParameters
+
+$AssignmentParameters = @{
+    User = $Users
+    Uri = 'https://contoso.sharepoint.com/sites/WorkingSite'
+    DocumentLibrary = 'Documents'
+    ShortcutName = 'Working'
+    State = 'Present'
+    ReportPath = '.\odscex-results.json'
+    OutputFormat = 'Json'
+}
+
+Invoke-odscexShortcutAssignment @AssignmentParameters
 ```
 
 The CSV should contain either `UserPrincipalName`, `UserObjectId`, or `Id` columns.
@@ -144,15 +278,39 @@ The CSV should contain either `UserPrincipalName`, `UserObjectId`, or `Id` colum
 ### Target filtered users
 
 ```powershell
-$Users = Get-odscexTargetUser -Filter "accountEnabled eq true"
-Invoke-odscexShortcutAssignment -User $Users -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Documents" -ShortcutName "Working"
+$TargetUserParameters = @{
+    Filter = 'accountEnabled eq true'
+}
+$Users = Get-odscexTargetUser @TargetUserParameters
+
+$AssignmentParameters = @{
+    User = $Users
+    Uri = 'https://contoso.sharepoint.com/sites/WorkingSite'
+    DocumentLibrary = 'Documents'
+    ShortcutName = 'Working'
+}
+
+Invoke-odscexShortcutAssignment @AssignmentParameters
 ```
 
 ### Remove a shortcut from a group
 
 ```powershell
-$Users = Get-odscexTargetUser -GroupId "00000000-0000-0000-0000-000000000000"
-Invoke-odscexShortcutAssignment -User $Users -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibrary "Documents" -ShortcutName "Working" -State Absent -ReportPath ".\odscex-remove.csv"
+$TargetUserParameters = @{
+    GroupId = '00000000-0000-0000-0000-000000000000'
+}
+$Users = Get-odscexTargetUser @TargetUserParameters
+
+$AssignmentParameters = @{
+    User = $Users
+    Uri = 'https://contoso.sharepoint.com/sites/WorkingSite'
+    DocumentLibrary = 'Documents'
+    ShortcutName = 'Working'
+    State = 'Absent'
+    ReportPath = '.\odscex-remove.csv'
+}
+
+Invoke-odscexShortcutAssignment @AssignmentParameters
 ```
 
 ----------
@@ -184,14 +342,27 @@ Invoke-odscexShortcutAssignment -User $Users -Uri "https://contoso.sharepoint.co
 Apply the plan:
 
 ```powershell
-Invoke-odscexApply -Path ".\shortcuts.json" -ReportPath ".\shortcut-apply.csv"
+$ApplyParameters = @{
+    Path = '.\shortcuts.json'
+    ReportPath = '.\shortcut-apply.csv'
+}
+
+Invoke-odscexApply @ApplyParameters
 ```
 
 Preview the plan without applying it:
 
 ```powershell
-Invoke-odscexPlan -Path ".\shortcuts.json"
-Invoke-odscexApply -Path ".\shortcuts.json" -WhatIf
+$PlanParameters = @{
+    Path = '.\shortcuts.json'
+}
+Invoke-odscexPlan @PlanParameters
+
+$ApplyParameters = @{
+    Path = '.\shortcuts.json'
+    WhatIf = $true
+}
+Invoke-odscexApply @ApplyParameters
 ```
 
 ----------
