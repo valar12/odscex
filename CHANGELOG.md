@@ -2,7 +2,7 @@
 
 ## 0.5.1
 
-* Added `Connect-odsc-ev -Cloud` support for Microsoft Graph Global, GCC, GCC High, DoD, and China endpoints.
+* Added `Connect-odscex -Cloud` support for Microsoft Graph Global, GCC, GCC High, DoD, and China endpoints.
 * Added Graph endpoint selection for national clouds so API requests use the connected cloud's Microsoft Graph root endpoint.
 * Added optional `-GraphEndpoint` override for advanced/custom national-cloud endpoint scenarios.
 * Fixed shortcut creation with `-RelativePath` so shortcuts are created directly in the target OneDrive folder.
@@ -10,7 +10,7 @@
 
 ## 0.5.0
 
-* Added organization-scale shortcut assignment commands: `Get-odsc-evTargetUser`, `Set-odsc-evShortcutState`, `Invoke-odsc-evShortcutAssignment`, `Invoke-odsc-evPlan`, `Invoke-odsc-evApply`, `Invoke-odsc-evGraphBatch`, and `Test-odsc-evPermission`.
+* Added organization-scale shortcut assignment commands: `Get-odscexTargetUser`, `Set-odscexShortcutState`, `Invoke-odscexShortcutAssignment`, `Invoke-odscexPlan`, `Invoke-odscexApply`, `Invoke-odscexGraphBatch`, and `Test-odscexPermission`.
 * Added idempotent desired-state behavior with configurable conflict actions.
 * Added Microsoft Graph retry/backoff handling, pagination support, and a JSON batch helper.
 * Added safer OneDrive path encoding, folder-path resolution, and exact document-library matching with ambiguity protection.
@@ -28,9 +28,9 @@
 ## 0.3.0
 
 * Change endpoint `/drives/{idOrUserPrincipalName}` to `/users/{idOrUserPrincipalName}/drive`
-* New command: `Get-odsc-evDrive`
+* New command: `Get-odscexDrive`
 * Ease use in scripts by removing Stop on some errors
-* Ensure that `Remove-odsc-ev` removes a remoteItem-type resource
+* Ensure that `Remove-odscex` removes a remoteItem-type resource
 * Move token to global script variable for better interaction in scripts
 * Other minor fixes and updates
 
@@ -38,7 +38,7 @@
 
 * Add rename request to name shortcut exactly as passed to the script
 * Change leading blank spaces to tabs
-* Refactor from OneDriveShortcut to odsc-ev. Commands now are: `Connect-odsc-ev`, `Disconnect-odsc-ev`, `Get-odsc-ev`, `New-odsc-ev`, `Remove-odsc-ev`. API is `Invoke-odsc-evApiRequest`
+* Refactor from OneDriveShortcut to odscex. Commands now are: `Connect-odscex`, `Disconnect-odscex`, `Get-odscex`, `New-odscex`, `Remove-odscex`. API is `Invoke-odscexApiRequest`
 
 ## 0.1.1
 
