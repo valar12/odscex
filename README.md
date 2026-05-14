@@ -1,9 +1,9 @@
 # odsc-ev PowerShell Module
 
-[![GitHub Release](https://badge.fury.io/gh/innovara%2Fodsc-ev.svg)](https://github.com/valar12/odsc-ev/releases)
+[![GitHub Release](https://badge.fury.io/gh/valar12%2Fodsc-ev.svg)](https://github.com/valar12/odsc-ev/releases)
 [![PowerShell Gallery Release](https://img.shields.io/powershellgallery/v/odsc-ev)](https://www.powershellgallery.com/packages/odsc-ev)
 [![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/valar12/odsc-ev/blob/main/LICENSE.md)
-[![GitHub Last Commit](https://img.shields.io/github/last-commit/innovara/odsc-ev)](https://github.com/valar12/odsc-ev/commits/main)
+[![GitHub Last Commit](https://img.shields.io/github/last-commit/valar12/odsc-ev)](https://github.com/valar12/odsc-ev/commits/main)
 
 #### Table of Contents
 
