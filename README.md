@@ -1,9 +1,9 @@
-# odsc PowerShell Module
+# odsc-ev PowerShell Module
 
-[![GitHub Release](https://badge.fury.io/gh/innovara%2Fodsc.svg)](https://github.com/valar12/odsc/releases)
-[![PowerShell Gallery Release](https://img.shields.io/powershellgallery/v/odsc)](https://www.powershellgallery.com/packages/odsc)
-[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/valar12/odsc/blob/main/LICENSE.md)
-[![GitHub Last Commit](https://img.shields.io/github/last-commit/innovara/odsc)](https://github.com/valar12/odsc/commits/main)
+[![GitHub Release](https://badge.fury.io/gh/innovara%2Fodsc-ev.svg)](https://github.com/valar12/odsc-ev/releases)
+[![PowerShell Gallery Release](https://img.shields.io/powershellgallery/v/odsc-ev)](https://www.powershellgallery.com/packages/odsc-ev)
+[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/valar12/odsc-ev/blob/main/LICENSE.md)
+[![GitHub Last Commit](https://img.shields.io/github/last-commit/innovara/odsc-ev)](https://github.com/valar12/odsc-ev/commits/main)
 
 #### Table of Contents
 
@@ -24,7 +24,7 @@
 
 ## Overview
 
-odsc is a [PowerShell](https://microsoft.com/powershell) [module](https://technet.microsoft.com/en-us/library/dd901839.aspx)
+odsc-ev is a [PowerShell](https://microsoft.com/powershell) [module](https://technet.microsoft.com/en-us/library/dd901839.aspx)
 that provides CLI access to managing SharePoint shortcuts in OneDrive. It supports both single-user shortcut operations and organization-scale desired-state assignments for groups, CSV targets, filtered users, or all users.
 
 The expanded organization management surface is intended for repeatable administrative runs. You can resolve users, validate access, apply shortcuts idempotently, remove shortcuts, export reports, and define shortcuts in a plan file for scheduled or CI/CD-driven deployments.
@@ -35,10 +35,10 @@ Check out [CHANGELOG.md](CHANGELOG.md) to review the details of all releases.
 
 ## Installation
 
-You can get latest release of the odsc module on the [PowerShell Gallery](https://www.powershellgallery.com/packages/odsc)
+You can get latest release of the odsc-ev module on the [PowerShell Gallery](https://www.powershellgallery.com/packages/odsc-ev)
 
 ```PowerShell
-Install-Module -Name odsc
+Install-Module -Name odsc-ev
 ```
 
 ## Prerequisites
@@ -55,7 +55,7 @@ Broad organization-scale deployments commonly require permissions such as `Files
 
 ## National cloud support
 
-odsc can authenticate and send Microsoft Graph requests to multiple Microsoft cloud environments. Use `Connect-odsc -Cloud` instead of manually setting endpoints.
+odsc-ev can authenticate and send Microsoft Graph requests to multiple Microsoft cloud environments. Use `Connect-odsc-ev -Cloud` instead of manually setting endpoints.
 
 | Cloud | Microsoft Graph endpoint | Notes |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ odsc can authenticate and send Microsoft Graph requests to multiple Microsoft cl
 Example GCC connection:
 
 ```powershell
-Connect-odsc `
+Connect-odsc-ev `
     -Cloud GCC `
     -TenantId "00000000-0000-0000-0000-000000000000" `
     -ClientId "00000000-0000-0000-0000-000000000000" `
@@ -79,21 +79,21 @@ Example GCC High connection:
 
 ```powershell
 $Certificate = Get-Item -Path 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000'
-Connect-odsc `
+Connect-odsc-ev `
     -Cloud GCCHigh `
     -TenantId "00000000-0000-0000-0000-000000000000" `
     -ClientId "00000000-0000-0000-0000-000000000000" `
     -ClientCertificate $Certificate
 ```
 
-After connection, every module command uses a token scoped to the selected cloud's Graph resource and sends requests to that cloud's Graph endpoint until `Disconnect-odsc` is called or another `Connect-odsc` call selects a different cloud. Advanced callers can use `-GraphEndpoint` to override the Graph root endpoint when required.
+After connection, every module command uses a token scoped to the selected cloud's Graph resource and sends requests to that cloud's Graph endpoint until `Disconnect-odsc-ev` is called or another `Connect-odsc-ev` call selects a different cloud. Advanced callers can use `-GraphEndpoint` to override the Graph root endpoint when required.
 
 ## Usage
 
 Connect with a client secret:
 
 ```powershell
-Connect-odsc `
+Connect-odsc-ev `
     -TenantId "00000000-0000-0000-0000-000000000000" `
     -ClientId "00000000-0000-0000-0000-000000000000" `
     -ClientSecret (ConvertTo-SecureString -String "client-secret" -AsPlainText -Force)
@@ -103,7 +103,7 @@ Connect with a certificate:
 
 ```powershell
 $Certificate = Get-Item -Path 'Cert:\CurrentUser\My\0000000000000000000000000000000000000000'
-Connect-odsc `
+Connect-odsc-ev `
     -TenantId "00000000-0000-0000-0000-000000000000" `
     -ClientId "00000000-0000-0000-0000-000000000000" `
     -ClientCertificate $Certificate
@@ -112,7 +112,7 @@ Connect-odsc `
 Disconnect when finished:
 
 ```powershell
-Disconnect-odsc
+Disconnect-odsc-ev
 ```
 
 For full command-level help, run:
@@ -128,13 +128,13 @@ For additional examples, see [USAGE.md](USAGE.md).
 ### Get a user's OneDrive drive metadata
 
 ```powershell
-Get-odscDrive -UserPrincipalName "user@contoso.com"
+Get-odsc-evDrive -UserPrincipalName "user@contoso.com"
 ```
 
 ### Create a shortcut to a document library
 
 ```powershell
-New-odsc `
+New-odsc-ev `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
     -ShortcutName "Working Documents" `
@@ -144,7 +144,7 @@ New-odsc `
 ### Create a shortcut to a document library folder
 
 ```powershell
-New-odsc `
+New-odsc-ev `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
     -FolderPath "Department/Policies" `
@@ -155,7 +155,7 @@ New-odsc `
 ### Place the shortcut in a OneDrive subfolder
 
 ```powershell
-New-odsc `
+New-odsc-ev `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
     -RelativePath "Company/Shortcuts" `
@@ -165,10 +165,10 @@ New-odsc `
 
 ### Converge a shortcut with desired-state behavior
 
-`Set-odscShortcutState` is the recommended command for repeatable automation. If the shortcut already points to the requested SharePoint target, the command reports `Compliant` instead of creating a duplicate.
+`Set-odsc-evShortcutState` is the recommended command for repeatable automation. If the shortcut already points to the requested SharePoint target, the command reports `Compliant` instead of creating a duplicate.
 
 ```powershell
-Set-odscShortcutState `
+Set-odsc-evShortcutState `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
     -ShortcutName "Working Documents" `
@@ -180,7 +180,7 @@ Set-odscShortcutState `
 ### Replace a conflicting shortcut
 
 ```powershell
-Set-odscShortcutState `
+Set-odsc-evShortcutState `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
     -ShortcutName "Working Documents" `
@@ -192,7 +192,7 @@ Set-odscShortcutState `
 ### Remove a shortcut
 
 ```powershell
-Remove-odsc `
+Remove-odsc-ev `
     -ShortcutName "Working Documents" `
     -UserPrincipalName "user@contoso.com" `
     -PassThru
@@ -200,12 +200,12 @@ Remove-odsc `
 
 ## Organization-scale management
 
-Use `Get-odscTargetUser` to resolve users, then apply a desired shortcut state with `Invoke-odscShortcutAssignment` or `Invoke-odscApply`.
+Use `Get-odsc-evTargetUser` to resolve users, then apply a desired shortcut state with `Invoke-odsc-evShortcutAssignment` or `Invoke-odsc-evApply`.
 
 ### Validate permissions before rollout
 
 ```powershell
-Test-odscPermission `
+Test-odsc-evPermission `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -UserPrincipalName "pilot.user@contoso.com"
 ```
@@ -213,16 +213,16 @@ Test-odscPermission `
 ### Assign a shortcut to all members of a group
 
 ```powershell
-$Users = Get-odscTargetUser -GroupId "00000000-0000-0000-0000-000000000000"
+$Users = Get-odsc-evTargetUser -GroupId "00000000-0000-0000-0000-000000000000"
 
-Invoke-odscShortcutAssignment `
+Invoke-odsc-evShortcutAssignment `
     -User $Users `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
     -ShortcutName "Working Documents" `
     -State Present `
     -ConflictAction Skip `
-    -ReportPath ".\odsc-group-results.csv"
+    -ReportPath ".\odsc-ev-group-results.csv"
 ```
 
 ### Assign a shortcut to users from a CSV file
@@ -230,23 +230,23 @@ Invoke-odscShortcutAssignment `
 The CSV should contain `UserPrincipalName`, `UserObjectId`, or `Id` columns.
 
 ```powershell
-$Users = Get-odscTargetUser -CsvPath ".\users.csv"
+$Users = Get-odsc-evTargetUser -CsvPath ".\users.csv"
 
-Invoke-odscShortcutAssignment `
+Invoke-odsc-evShortcutAssignment `
     -User $Users `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
     -ShortcutName "Working Documents" `
-    -ReportPath ".\odsc-csv-results.json" `
+    -ReportPath ".\odsc-ev-csv-results.json" `
     -OutputFormat Json
 ```
 
 ### Assign a shortcut to filtered users
 
 ```powershell
-$Users = Get-odscTargetUser -Filter "accountEnabled eq true"
+$Users = Get-odsc-evTargetUser -Filter "accountEnabled eq true"
 
-Invoke-odscShortcutAssignment `
+Invoke-odsc-evShortcutAssignment `
     -User $Users `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
@@ -257,37 +257,37 @@ Invoke-odscShortcutAssignment `
 ### Assign a shortcut to all users
 
 ```powershell
-$Users = Get-odscTargetUser -AllUsers
+$Users = Get-odsc-evTargetUser -AllUsers
 
-Invoke-odscShortcutAssignment `
+Invoke-odsc-evShortcutAssignment `
     -User $Users `
     -Uri "https://contoso.sharepoint.com/sites/Company" `
     -DocumentLibrary "Documents" `
     -ShortcutName "Company Documents" `
     -State Present `
-    -ReportPath ".\odsc-all-users.csv"
+    -ReportPath ".\odsc-ev-all-users.csv"
 ```
 
 ### Remove a shortcut for a target population
 
 ```powershell
-$Users = Get-odscTargetUser -GroupId "00000000-0000-0000-0000-000000000000"
+$Users = Get-odsc-evTargetUser -GroupId "00000000-0000-0000-0000-000000000000"
 
-Invoke-odscShortcutAssignment `
+Invoke-odsc-evShortcutAssignment `
     -User $Users `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
     -ShortcutName "Working Documents" `
     -State Absent `
-    -ReportPath ".\odsc-remove-results.csv"
+    -ReportPath ".\odsc-ev-remove-results.csv"
 ```
 
 ### Preview changes with WhatIf
 
 ```powershell
-$Users = Get-odscTargetUser -CsvPath ".\pilot-users.csv"
+$Users = Get-odsc-evTargetUser -CsvPath ".\pilot-users.csv"
 
-Invoke-odscShortcutAssignment `
+Invoke-odsc-evShortcutAssignment `
     -User $Users `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
@@ -301,19 +301,19 @@ Invoke-odscShortcutAssignment `
 If a large run stops after processing some users, use `-ResumeFrom` to continue at a zero-based user index.
 
 ```powershell
-Invoke-odscShortcutAssignment `
+Invoke-odsc-evShortcutAssignment `
     -User $Users `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
     -ShortcutName "Working Documents" `
     -State Present `
     -ResumeFrom 250 `
-    -ReportPath ".\odsc-resumed-results.csv"
+    -ReportPath ".\odsc-ev-resumed-results.csv"
 ```
 
 ## Desired-state plan files
 
-Plan files let you describe expected shortcuts once and reapply them on a schedule. `Invoke-odscPlan` and `Invoke-odscApply` support JSON and PowerShell data files.
+Plan files let you describe expected shortcuts once and reapply them on a schedule. `Invoke-odsc-evPlan` and `Invoke-odsc-evApply` support JSON and PowerShell data files.
 
 ### Example JSON plan
 
@@ -347,13 +347,13 @@ Plan files let you describe expected shortcuts once and reapply them on a schedu
 Review the plan:
 
 ```powershell
-Invoke-odscPlan -Path ".\shortcuts.json"
+Invoke-odsc-evPlan -Path ".\shortcuts.json"
 ```
 
 Apply the plan and export a report:
 
 ```powershell
-Invoke-odscApply `
+Invoke-odsc-evApply `
     -Path ".\shortcuts.json" `
     -ReportPath ".\shortcut-apply.csv"
 ```
@@ -361,7 +361,7 @@ Invoke-odscApply `
 Preview the plan without applying changes:
 
 ```powershell
-Invoke-odscApply -Path ".\shortcuts.json" -WhatIf
+Invoke-odsc-evApply -Path ".\shortcuts.json" -WhatIf
 ```
 
 ## Reporting and audit output
@@ -369,7 +369,7 @@ Invoke-odscApply -Path ".\shortcuts.json" -WhatIf
 Organization-scale commands return structured result objects and can also write reports. The report format can be `Csv`, `Json`, or `Clixml`.
 
 ```powershell
-Invoke-odscShortcutAssignment `
+Invoke-odsc-evShortcutAssignment `
     -User $Users `
     -Uri "https://contoso.sharepoint.com/sites/WorkingSite" `
     -DocumentLibrary "Documents" `
@@ -389,10 +389,10 @@ Common statuses include:
 
 ## Advanced Graph operations
 
-`Invoke-odscApiRequest` follows `@odata.nextLink` when callers request all pages and retries transient Microsoft Graph responses such as `429`, `500`, `502`, `503`, and `504`. Advanced callers can also submit JSON batches of up to 20 Microsoft Graph subrequests.
+`Invoke-odsc-evApiRequest` follows `@odata.nextLink` when callers request all pages and retries transient Microsoft Graph responses such as `429`, `500`, `502`, `503`, and `504`. Advanced callers can also submit JSON batches of up to 20 Microsoft Graph subrequests.
 
 ```powershell
-Invoke-odscGraphBatch -Requests @(
+Invoke-odsc-evGraphBatch -Requests @(
     @{ id = 'drive'; method = 'GET'; url = '/users/user@contoso.com/drive' },
     @{ id = 'site'; method = 'GET'; url = '/sites/contoso.sharepoint.com:/sites/WorkingSite' }
 )
@@ -400,4 +400,4 @@ Invoke-odscGraphBatch -Requests @(
 
 ## Licensing
 
-odsc is licensed under the [MIT license](LICENSE.md).
+odsc-ev is licensed under the [MIT license](LICENSE.md).
