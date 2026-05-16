@@ -45,15 +45,15 @@ Describe 'Set-odscexShortcutState' {
                 throw 'StatusCode: 404'
             }
 
-            if ($Resource -eq 'users/user@contoso.com/drive/items/destination-folder/children' -and $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Post) {
+            if ($Resource -eq 'drives/user-drive/items/destination-folder/children' -and $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Post) {
                 throw 'StatusCode: 400'
             }
 
-            if ($Resource -eq 'users/user@contoso.com/drive/items/root-item/children' -and $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Post) {
+            if ($Resource -eq 'drives/user-drive/items/root-item/children' -and $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Post) {
                 return [pscustomobject]@{ id = 'temporary-shortcut' }
             }
 
-            if ($Resource -eq 'users/user@contoso.com/drive/items/temporary-shortcut' -and $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch) {
+            if ($Resource -eq 'drives/user-drive/items/temporary-shortcut' -and $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch) {
                 return [pscustomobject]@{ id = 'temporary-shortcut' }
             }
         }
@@ -62,10 +62,11 @@ Describe 'Set-odscexShortcutState' {
 
         $PatchRequests = @($script:Requests | Where-Object { $_.Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch })
         $PatchRequests | Should -HaveCount 2
+        $PatchRequests[0].Resource | Should -Be 'drives/user-drive/items/temporary-shortcut'
+        $PatchRequests[1].Resource | Should -Be 'drives/user-drive/items/temporary-shortcut'
 
         $MoveBody = $PatchRequests[0].Body | ConvertFrom-Json
         $MoveBody.parentReference.id | Should -Be 'destination-folder'
-        $MoveBody.parentReference.driveId | Should -Be 'user-drive'
         $MoveBody.PSObject.Properties.Name | Should -Not -Contain 'name'
 
         $RenameBody = $PatchRequests[1].Body | ConvertFrom-Json
