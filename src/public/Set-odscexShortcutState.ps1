@@ -159,8 +159,9 @@ function Set-odscexShortcutState {
             Write-Error "Unable to build shortcut target reference for '$ShortcutName'. Microsoft Graph did not return SharePoint ids or a drive item reference for the target." -ErrorAction Stop
         }
 
+        $RootCreateResource = "users/${User}/drive/items/$($OneDriveRoot.id)/children"
         $CreateRequest = @{
-            Resource = "users/${User}/drive/items/$($OneDriveRoot.id)/children"
+            Resource = $RootCreateResource
             Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Post
             Body = @{
                 name = $ShortcutName
@@ -170,16 +171,38 @@ function Set-odscexShortcutState {
         }
 
         if ($PSCmdlet.ShouldProcess("${User}'s OneDrive", "Creating shortcut '$ShortcutName'")) {
+            $DestinationFolder = $null
+            $MoveShortcutToDestination = $false
             if ($RelativePath) {
                 $FolderResponse = Resolve-odscexDriveFolderPath -User $User -RelativePath $RelativePath -Create
                 if (-not $FolderResponse) {
                     Write-Error "Error resolving OneDrive folder path '$RelativePath' for ${User}." -ErrorAction Stop
                 }
 
+                $DestinationFolder = $FolderResponse
                 $CreateRequest.Resource = "users/${User}/drive/items/$($FolderResponse.id)/children"
             }
 
-            $ShortcutResponse = Invoke-odscexApiRequest @CreateRequest
+            try {
+                $ShortcutResponse = Invoke-odscexApiRequest @CreateRequest -ErrorAction Stop
+            } catch {
+                $StatusCode = Get-odscexGraphStatusCode -ErrorRecord $_
+                if (($StatusCode -ne 400) -or (-not $DestinationFolder)) {
+                    Write-Error $_ -ErrorAction Stop
+                }
+
+                Write-Verbose "Microsoft Graph rejected shortcut creation directly inside '$RelativePath'. Creating the shortcut at the OneDrive root, then moving it to the requested folder."
+                $TemporaryShortcutName = "_odscex-$([Guid]::NewGuid().ToString('N'))"
+                $CreateRequest.Resource = $RootCreateResource
+                $CreateRequest.Body = @{
+                    name = $TemporaryShortcutName
+                    remoteItem = $RemoteItem
+                    '@microsoft.graph.conflictBehavior' = 'fail'
+                } | ConvertTo-Json -Depth 20
+
+                $ShortcutResponse = Invoke-odscexApiRequest @CreateRequest
+                $MoveShortcutToDestination = $true
+            }
 
             if (!($ShortcutResponse)) {
                 Write-Error "Error creating OneDrive shortcut '$($ShortcutName)' for ${User}." -ErrorAction Stop
@@ -188,9 +211,30 @@ function Set-odscexShortcutState {
             $RenameRequest = @{
                 Resource = "users/${User}/drive/items/$($ShortcutResponse.id)"
                 Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch
-                Body = @{ name = $ShortcutName } | ConvertTo-Json -Depth 10
+                Body = if ($MoveShortcutToDestination) {
+                    @{
+                        name = $ShortcutName
+                        parentReference = @{
+                            id = $DestinationFolder.id
+                        }
+                    } | ConvertTo-Json -Depth 10
+                } else {
+                    @{ name = $ShortcutName } | ConvertTo-Json -Depth 10
+                }
             }
-            $ShortcutResponse = Invoke-odscexApiRequest @RenameRequest
+            try {
+                $ShortcutResponse = Invoke-odscexApiRequest @RenameRequest -ErrorAction Stop
+            } catch {
+                if ($MoveShortcutToDestination) {
+                    try {
+                        Invoke-odscexApiRequest -Resource "users/${User}/drive/items/$($ShortcutResponse.id)" -Method ([Microsoft.PowerShell.Commands.WebRequestMethod]::Delete) -ErrorAction Stop | Out-Null
+                    } catch {
+                        Write-Verbose "Unable to clean up temporary shortcut '$($ShortcutResponse.id)' after move failure. $($_.Exception.Message)"
+                    }
+                }
+
+                Write-Error $_ -ErrorAction Stop
+            }
 
             if ($PassThru) {
                 return $ShortcutResponse
