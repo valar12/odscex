@@ -14,13 +14,13 @@ Create OneDrive shortcut to SharePoint.
 
 ### UserPrincipalName (Default)
 ```
-New-odscex -Uri <String> -DocumentLibrary <String> [-FolderPath <String>] [-RelativePath <String>] [-ShortcutName <String>]
+New-odscex -Uri <String> [-DocumentLibrary <String>] [-DocumentLibraryId <String>] [-FolderPath <String>] [-RelativePath <String>] [-ShortcutName <String>]
  -UserPrincipalName <String> [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### UserObjectId
 ```
-New-odscex -Uri <String> -DocumentLibrary <String> [-FolderPath <String>] [-RelativePath <String>] [-ShortcutName <String>]
+New-odscex -Uri <String> [-DocumentLibrary <String>] [-DocumentLibraryId <String>] [-FolderPath <String>] [-RelativePath <String>] [-ShortcutName <String>]
  -UserObjectId <String> [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
@@ -64,6 +64,13 @@ PS C:\> New-odscex -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -Docu
 
 This command creates a shortcut in the subfolder "subfolder1/subfolder2" for the user "user@contoso.com" that points to the Document Library called "Working Document Library" on the SharePoint site "https://contoso.sharepoint.com/sites/WorkingSite".
 
+### Example 6: Create a shortcut by document library id
+```powershell
+PS C:\> New-odscex -Uri "https://contoso.sharepoint.com/sites/WorkingSite" -DocumentLibraryId "11111111-1111-1111-1111-111111111111" -UserPrincipalName "user@contoso.com"
+```
+
+This command creates a shortcut to the document library with the specified list id. Use this when multiple libraries have similar display names or when automation already stores library ids.
+
 
 ## PARAMETERS
 
@@ -90,7 +97,22 @@ Type: String
 Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DocumentLibraryId
+Specifies a string that contains the document library list id. Specify either `-DocumentLibrary` or `-DocumentLibraryId`.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

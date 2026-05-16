@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 0.6.0
+
+* Refactored shortcut state handling into focused helpers for target matching, remote item references, drive item resources, fallback moves, and Graph error handling.
+* Split SharePoint target resolution into site, document library, and folder resolver helpers.
+* Centralized Microsoft Graph JSON body serialization in `Invoke-odscexApiRequest`.
+* Added `New-odscex -DocumentLibraryId` support and updated command help.
+* Expanded Pester coverage for shortcut helper behavior, subfolder fallback moves, and `New-odscex` library-id handling.
+
 ## 0.5.1
 
 * Added `Connect-odscex -Cloud` support for Microsoft Graph Global, GCC, GCC High, DoD, and China endpoints.

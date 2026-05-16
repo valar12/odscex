@@ -34,13 +34,13 @@ function Resolve-odscexDriveFolderPath {
 
         if (-not $Child) {
             $CreateRequest = @{
-                Resource = "users/${User}/drive/items/$($CurrentItem.id)/children"
+                Resource = Join-odscexDriveItemResource -User $User -ItemId $CurrentItem.id -Children
                 Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Post
                 Body = @{
                     name = $Segment
                     folder = @{}
                     '@microsoft.graph.conflictBehavior' = 'fail'
-                } | ConvertTo-Json -Depth 10
+                }
             }
 
             if ($PSCmdlet.ShouldProcess("${User}'s OneDrive", "Creating folder '$Segment' in '$RelativePath'")) {

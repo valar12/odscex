@@ -5,9 +5,13 @@ function New-odscex {
         [Parameter(Mandatory = $true, ParameterSetName = 'UserObjectId')]
         [string] $Uri,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'UserPrincipalName')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'UserObjectId')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UserPrincipalName')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UserObjectId')]
         [string] $DocumentLibrary,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'UserPrincipalName')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UserObjectId')]
+        [string] $DocumentLibraryId,
 
         [Parameter(Mandatory = $false, ParameterSetName = 'UserPrincipalName')]
         [Parameter(Mandatory = $false, ParameterSetName = 'UserObjectId')]
@@ -38,9 +42,12 @@ function New-odscex {
     )
 
     process {
+        if (-not $DocumentLibrary -and -not $DocumentLibraryId) {
+            Write-Error 'Specify -DocumentLibrary or -DocumentLibraryId.' -ErrorAction Stop
+        }
+
         $Parameters = @{
             Uri = $Uri
-            DocumentLibrary = $DocumentLibrary
             FolderPath = $FolderPath
             RelativePath = $RelativePath
             ShortcutName = $ShortcutName
@@ -48,6 +55,8 @@ function New-odscex {
             ConflictAction = $ConflictAction
             AllowAmbiguousLibraryMatch = $AllowAmbiguousLibraryMatch
         }
+
+        if ($DocumentLibraryId) { $Parameters.DocumentLibraryId = $DocumentLibraryId } else { $Parameters.DocumentLibrary = $DocumentLibrary }
 
         if ($PsCmdlet.ParameterSetName -eq 'UserObjectId') {
             $Parameters.UserObjectId = $UserObjectId

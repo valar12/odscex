@@ -8,7 +8,7 @@ function Invoke-odscexApiRequest {
         [Microsoft.PowerShell.Commands.WebRequestMethod] $Method,
 
         [Parameter(Mandatory = $false)]
-        [string] $Body,
+        [object] $Body,
 
         [Parameter(Mandatory = $false)]
         [switch] $DoNotUsePrefer,
@@ -65,7 +65,7 @@ function Invoke-odscexApiRequest {
                 }
 
                 if ($Body -and $NextUri -eq $Uri) {
-                    $Request.Body = $Body
+                    $Request.Body = ConvertTo-odscexJsonBody -Body $Body
                 }
 
                 try {

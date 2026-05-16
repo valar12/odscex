@@ -1,9 +1,74 @@
 BeforeAll {
     . "$PSScriptRoot/../src/private/Get-odscexGraphStatusCode.ps1"
+    . "$PSScriptRoot/../src/private/ConvertTo-odscexJsonBody.ps1"
+    . "$PSScriptRoot/../src/private/Join-odscexDriveItemResource.ps1"
     . "$PSScriptRoot/../src/private/Join-odscexDrivePathResource.ps1"
     . "$PSScriptRoot/../src/private/ConvertTo-odscexGraphDrivePath.ps1"
+    . "$PSScriptRoot/../src/private/New-odscexRemoteItemReference.ps1"
+    . "$PSScriptRoot/../src/private/Test-odscexShortcutTargetMatch.ps1"
+    . "$PSScriptRoot/../src/private/Move-odscexDriveItemWithRetry.ps1"
     . "$PSScriptRoot/../src/private/Write-odscexResult.ps1"
     . "$PSScriptRoot/../src/public/Set-odscexShortcutState.ps1"
+}
+
+Describe 'shortcut helper functions' {
+    It 'builds drive item resources for user and drive scoped calls' {
+        Join-odscexDriveItemResource -User 'user@contoso.com' -ItemId 'item' | Should -Be 'users/user@contoso.com/drive/items/item'
+        Join-odscexDriveItemResource -DriveId 'drive' -ItemId 'item' -Children | Should -Be 'drives/drive/items/item/children'
+    }
+
+    It 'serializes object bodies while leaving raw JSON strings unchanged' {
+        $Json = ConvertTo-odscexJsonBody -Body @{ name = 'Shortcut' }
+        ($Json | ConvertFrom-Json).name | Should -Be 'Shortcut'
+        ConvertTo-odscexJsonBody -Body '{"name":"Raw"}' | Should -Be '{"name":"Raw"}'
+    }
+
+    It 'matches shortcuts by SharePoint ids or drive item reference' {
+        $SharePointTarget = [pscustomobject]@{
+            ItemUniqueId = 'unique'
+            DocumentLibraryId = 'list'
+            SiteId = 'site'
+            WebId = 'web'
+        }
+        $SharePointShortcut = [pscustomobject]@{
+            remoteItem = [pscustomobject]@{
+                sharepointIds = [pscustomobject]@{
+                    listId = 'list'
+                    listItemUniqueId = 'unique'
+                    siteId = 'site'
+                    webId = 'web'
+                }
+            }
+        }
+        Test-odscexShortcutTargetMatch -Shortcut $SharePointShortcut -Target $SharePointTarget | Should -BeTrue
+
+        $DriveTarget = [pscustomobject]@{ DriveId = 'drive'; DriveItemId = 'item' }
+        $DriveShortcut = [pscustomobject]@{
+            remoteItem = [pscustomobject]@{
+                id = 'item'
+                parentReference = [pscustomobject]@{ driveId = 'drive' }
+            }
+        }
+        Test-odscexShortcutTargetMatch -Shortcut $DriveShortcut -Target $DriveTarget | Should -BeTrue
+    }
+
+    It 'builds remoteItem references from SharePoint ids or drive item ids' {
+        $SharePointRemoteItem = New-odscexRemoteItemReference -Target ([pscustomobject]@{
+            ItemUniqueId = 'unique'
+            DocumentLibraryId = 'list'
+            SiteId = 'site'
+            SiteUrl = 'https://contoso.sharepoint.com'
+            WebId = 'web'
+        })
+        $SharePointRemoteItem.sharepointIds.listItemUniqueId | Should -Be 'unique'
+
+        $DriveRemoteItem = New-odscexRemoteItemReference -Target ([pscustomobject]@{
+            DriveId = 'drive'
+            DriveItemId = 'item'
+        })
+        $DriveRemoteItem.id | Should -Be 'item'
+        $DriveRemoteItem.parentReference.driveId | Should -Be 'drive'
+    }
 }
 
 Describe 'Set-odscexShortcutState' {
@@ -44,10 +109,10 @@ Describe 'Set-odscexShortcutState' {
             param(
                 [string] $Resource,
                 [Microsoft.PowerShell.Commands.WebRequestMethod] $Method,
-                [string] $Body
+                [object] $Body
             )
 
-            $script:Requests.Add([pscustomobject]@{ Resource = $Resource; Method = $Method; Body = $Body }) | Out-Null
+            $script:Requests.Add([pscustomobject]@{ Resource = $Resource; Method = $Method; Body = (ConvertTo-odscexJsonBody -Body $Body) }) | Out-Null
 
             if ($Resource -eq 'users/user@contoso.com/drive/root:/Shortcuts/2025-06-25' -and $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Get) {
                 throw 'StatusCode: 404'
@@ -62,7 +127,7 @@ Describe 'Set-odscexShortcutState' {
             }
 
             if ($Resource -eq 'drives/user-drive/items/temporary-shortcut' -and $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch) {
-                $RequestBody = $Body | ConvertFrom-Json
+                $RequestBody = ConvertTo-odscexJsonBody -Body $Body | ConvertFrom-Json
                 if ($RequestBody.parentReference) {
                     $script:MovePatchAttempts++
                     if ($script:MovePatchAttempts -lt 3) {

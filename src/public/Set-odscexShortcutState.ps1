@@ -96,21 +96,7 @@ function Set-odscexShortcutState {
         }
 
         if ($ExistingShortcut) {
-            $ExistingIds = $ExistingShortcut.remoteItem.sharepointIds
-            $MatchesTargetSharePointIds = $Target.ItemUniqueId -and
-                $ExistingShortcut.remoteItem -and
-                ($ExistingIds.listId -eq $Target.DocumentLibraryId) -and
-                ($ExistingIds.listItemUniqueId -eq $Target.ItemUniqueId) -and
-                ($ExistingIds.siteId -eq $Target.SiteId) -and
-                ($ExistingIds.webId -eq $Target.WebId)
-            $MatchesTargetDriveItem = $Target.DriveId -and
-                $Target.DriveItemId -and
-                $ExistingShortcut.remoteItem -and
-                ($ExistingShortcut.remoteItem.id -eq $Target.DriveItemId) -and
-                ($ExistingShortcut.remoteItem.parentReference.driveId -eq $Target.DriveId)
-            $MatchesTarget = $MatchesTargetSharePointIds -or $MatchesTargetDriveItem
-
-            if ($MatchesTarget) {
+            if (Test-odscexShortcutTargetMatch -Shortcut $ExistingShortcut -Target $Target) {
                 return Write-odscexResult -User $User -ShortcutName $ShortcutName -Action 'None' -Status 'Compliant' -Response $ExistingShortcut -Message 'Shortcut already points to the requested target.' -TargetSite $Uri -TargetLibrary $DocumentLibrary -TargetFolderPath $FolderPath
             }
 
@@ -138,34 +124,15 @@ function Set-odscexShortcutState {
 
         $OneDriveRoot = Resolve-odscexOneDriveRoot -User $User
 
-        if ($Target.ItemUniqueId) {
-            $RemoteItem = @{
-                sharepointIds = @{
-                    listId = $Target.DocumentLibraryId
-                    listItemUniqueId = $Target.ItemUniqueId
-                    siteId = $Target.SiteId
-                    siteUrl = $Target.SiteUrl
-                    webId = $Target.WebId
-                }
-            }
-        } elseif ($Target.DriveId -and $Target.DriveItemId) {
-            $RemoteItem = @{
-                id = $Target.DriveItemId
-                parentReference = @{
-                    driveId = $Target.DriveId
-                }
-            }
-        } else {
-            Write-Error "Unable to build shortcut target reference for '$ShortcutName'. Microsoft Graph did not return SharePoint ids or a drive item reference for the target." -ErrorAction Stop
-        }
+        $RemoteItem = New-odscexRemoteItemReference -Target $Target -ShortcutName $ShortcutName
 
         $OneDriveDriveId = $OneDriveRoot.parentReference.driveId
         # Prefer drive-scoped item URLs after the destination drive is known. Microsoft Graph can
         # reject remoteItem create/move requests that are routed through /users/{id}/drive.
         $RootCreateResource = if ($OneDriveDriveId) {
-            "drives/${OneDriveDriveId}/items/$($OneDriveRoot.id)/children"
+            Join-odscexDriveItemResource -DriveId $OneDriveDriveId -ItemId $OneDriveRoot.id -Children
         } else {
-            "users/${User}/drive/items/$($OneDriveRoot.id)/children"
+            Join-odscexDriveItemResource -User $User -ItemId $OneDriveRoot.id -Children
         }
         $CreateRequest = @{
             Resource = $RootCreateResource
@@ -174,7 +141,7 @@ function Set-odscexShortcutState {
                 name = $ShortcutName
                 remoteItem = $RemoteItem
                 '@microsoft.graph.conflictBehavior' = if ($ConflictAction -eq 'Rename') { 'rename' } else { 'fail' }
-            } | ConvertTo-Json -Depth 20
+            }
         }
 
         if ($PSCmdlet.ShouldProcess("${User}'s OneDrive", "Creating shortcut '$ShortcutName'")) {
@@ -194,9 +161,9 @@ function Set-odscexShortcutState {
                 }
 
                 $CreateRequest.Resource = if ($DestinationDriveId) {
-                    "drives/${DestinationDriveId}/items/$($FolderResponse.id)/children"
+                    Join-odscexDriveItemResource -DriveId $DestinationDriveId -ItemId $FolderResponse.id -Children
                 } else {
-                    "users/${User}/drive/items/$($FolderResponse.id)/children"
+                    Join-odscexDriveItemResource -User $User -ItemId $FolderResponse.id -Children
                 }
             }
 
@@ -215,7 +182,7 @@ function Set-odscexShortcutState {
                     name = $TemporaryShortcutName
                     remoteItem = $RemoteItem
                     '@microsoft.graph.conflictBehavior' = 'fail'
-                } | ConvertTo-Json -Depth 20
+                }
 
                 $ShortcutResponse = Invoke-odscexApiRequest @CreateRequest
                 $MoveShortcutToDestination = $true
@@ -228,54 +195,26 @@ function Set-odscexShortcutState {
             try {
                 if ($MoveShortcutToDestination) {
                     $ShortcutResourceById = if ($DestinationDriveId) {
-                        "drives/${DestinationDriveId}/items/$($ShortcutResponse.id)"
+                        Join-odscexDriveItemResource -DriveId $DestinationDriveId -ItemId $ShortcutResponse.id
                     } else {
-                        "users/${User}/drive/items/$($ShortcutResponse.id)"
+                        Join-odscexDriveItemResource -User $User -ItemId $ShortcutResponse.id
                     }
 
-                    $MoveRequest = @{
-                        Resource = $ShortcutResourceById
-                        Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch
-                        Body = @{
-                            parentReference = @{
-                                id = $DestinationFolder.id
-                            }
-                        } | ConvertTo-Json -Depth 10
-                    }
-
-                    $MoveAttempt = 0
-                    $MoveMaxRetryCount = 5
-                    while ($true) {
-                        try {
-                            $ShortcutResponse = Invoke-odscexApiRequest @MoveRequest -ErrorAction Stop
-                            break
-                        } catch {
-                            $MoveAttempt++
-                            $StatusCode = Get-odscexGraphStatusCode -ErrorRecord $_
-                            if (($StatusCode -eq 400) -and ($MoveAttempt -le $MoveMaxRetryCount)) {
-                                $Delay = [Math]::Min(30, [int](2 * [Math]::Pow(2, ($MoveAttempt - 1))))
-                                Write-Verbose "Microsoft Graph returned HTTP 400 while moving newly created shortcut '$($ShortcutResponse.id)' into '$RelativePath'. Retrying in $Delay seconds because OneDrive can take time to make a new shortcut movable."
-                                Start-Sleep -Seconds $Delay
-                                continue
-                            }
-
-                            Write-Error $_ -ErrorAction Stop
-                        }
-                    }
+                    $ShortcutResponse = Move-odscexDriveItemWithRetry -Resource $ShortcutResourceById -DestinationFolderId $DestinationFolder.id -RelativePath $RelativePath -ItemId $ShortcutResponse.id
                 }
 
                 $ShortcutResourceById = if ($DestinationDriveId) {
-                    "drives/${DestinationDriveId}/items/$($ShortcutResponse.id)"
+                    Join-odscexDriveItemResource -DriveId $DestinationDriveId -ItemId $ShortcutResponse.id
                 } elseif ($OneDriveDriveId) {
-                    "drives/${OneDriveDriveId}/items/$($ShortcutResponse.id)"
+                    Join-odscexDriveItemResource -DriveId $OneDriveDriveId -ItemId $ShortcutResponse.id
                 } else {
-                    "users/${User}/drive/items/$($ShortcutResponse.id)"
+                    Join-odscexDriveItemResource -User $User -ItemId $ShortcutResponse.id
                 }
 
                 $RenameRequest = @{
                     Resource = $ShortcutResourceById
                     Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch
-                    Body = @{ name = $ShortcutName } | ConvertTo-Json -Depth 10
+                    Body = @{ name = $ShortcutName }
                 }
                 $ShortcutResponse = Invoke-odscexApiRequest @RenameRequest -ErrorAction Stop
             } catch {
