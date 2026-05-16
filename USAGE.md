@@ -231,6 +231,8 @@ Remove-odscex @RemoveParameters
 
 ## Organization-scale examples
 
+Group targeting reads groups/{id}/transitiveMembers/microsoft.graph.user in Microsoft Graph. Grant admin consent for GroupMember.Read.All at minimum, or a broader equivalent such as Group.Read.All or Directory.Read.All. Hidden membership groups also require Member.Read.Hidden.
+
 ### Target a group
 
 ```powershell

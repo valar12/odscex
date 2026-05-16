@@ -11,6 +11,9 @@ function Test-odscexPermission {
         [string] $UserObjectId,
 
         [Parameter(Mandatory = $false)]
+        [string] $GroupId,
+
+        [Parameter(Mandatory = $false)]
         [string] $DocumentLibrary,
 
         [Parameter(Mandatory = $false)]
@@ -30,6 +33,21 @@ function Test-odscexPermission {
         $Checks.Add([pscustomobject]@{ Check = 'GraphConnection'; Status = 'Passed'; Message = 'Token can call Microsoft Graph.' }) | Out-Null
     } catch {
         $Checks.Add([pscustomobject]@{ Check = 'GraphConnection'; Status = 'Failed'; Message = $_.Exception.Message }) | Out-Null
+    }
+
+    if ($GroupId) {
+        try {
+            Invoke-odscexApiRequest -Resource "groups/${GroupId}/transitiveMembers/microsoft.graph.user?`$select=id&`$top=1" -Method ([Microsoft.PowerShell.Commands.WebRequestMethod]::Get) | Out-Null
+            $Checks.Add([pscustomobject]@{ Check = 'GroupMemberAccess'; Status = 'Passed'; Message = "Can read transitive user members for group '$GroupId'." }) | Out-Null
+        } catch {
+            $StatusCode = Get-odscexGraphStatusCode -ErrorRecord $_
+            $Message = if ($StatusCode -eq 403) {
+                "Microsoft Graph returned 403 while reading transitive user members for group '$GroupId'. Grant admin consent for GroupMember.Read.All, or use a broader equivalent such as Group.Read.All or Directory.Read.All. Hidden membership groups also require Member.Read.Hidden."
+            } else {
+                $_.Exception.Message
+            }
+            $Checks.Add([pscustomobject]@{ Check = 'GroupMemberAccess'; Status = 'Failed'; Message = $Message }) | Out-Null
+        }
     }
 
     if ($UserPrincipalName -or $UserObjectId) {
