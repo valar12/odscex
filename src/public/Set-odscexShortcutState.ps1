@@ -68,7 +68,14 @@ function Set-odscexShortcutState {
         try {
             $ExistingShortcut = Invoke-odscexApiRequest -Resource $ShortcutResource -Method ([Microsoft.PowerShell.Commands.WebRequestMethod]::Get) -ErrorAction Stop
         } catch {
-            $ExistingShortcut = $null
+            $StatusCode = Get-odscexGraphStatusCode -ErrorRecord $_
+            if ($StatusCode -eq 404) {
+                $ExistingShortcut = $null
+            } elseif ($StatusCode -eq 403) {
+                Write-Error "Unable to check for existing shortcut '$ShortcutName' for '$User'. Microsoft Graph returned 403 for $ShortcutResource. Verify permission to read the user's OneDrive." -ErrorAction Stop
+            } else {
+                Write-Error "Unable to check for existing shortcut '$ShortcutName' for '$User'. $($_.Exception.Message)" -ErrorAction Stop
+            }
         }
 
         if ($State -eq 'Absent') {
@@ -122,8 +129,10 @@ function Set-odscexShortcutState {
             }
         }
 
+        $OneDriveRoot = Resolve-odscexOneDriveRoot -User $User
+
         $CreateRequest = @{
-            Resource = "users/${User}/drive/root/children"
+            Resource = "users/${User}/drive/items/$($OneDriveRoot.id)/children"
             Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Post
             Body = @{
                 name = $ShortcutName
