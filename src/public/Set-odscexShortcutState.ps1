@@ -175,17 +175,34 @@ function Set-odscexShortcutState {
                     Write-Error $_ -ErrorAction Stop
                 }
 
-                Write-Verbose "Microsoft Graph rejected shortcut creation directly inside '$RelativePath'. Creating the shortcut at the OneDrive root, then moving it to the requested folder."
-                $TemporaryShortcutName = "_odscex-$([Guid]::NewGuid().ToString('N'))"
-                $CreateRequest.Resource = $RootCreateResource
-                $CreateRequest.Body = @{
-                    name = $TemporaryShortcutName
-                    remoteItem = $RemoteItem
-                    '@microsoft.graph.conflictBehavior' = 'fail'
+                $PathCreateResource = if ($DestinationDriveId) {
+                    Join-odscexDrivePathChildrenResource -DriveId $DestinationDriveId -RelativePath $RelativePath
+                } else {
+                    Join-odscexDrivePathChildrenResource -User $User -RelativePath $RelativePath
                 }
 
-                $ShortcutResponse = Invoke-odscexApiRequest @CreateRequest
-                $MoveShortcutToDestination = $true
+                Write-Verbose "Microsoft Graph rejected shortcut creation by destination item id inside '$RelativePath'. Retrying with the destination folder path resource."
+                $CreateRequest.Resource = $PathCreateResource
+                try {
+                    $ShortcutResponse = Invoke-odscexApiRequest @CreateRequest -ErrorAction Stop
+                } catch {
+                    $PathStatusCode = Get-odscexGraphStatusCode -ErrorRecord $_
+                    if ($PathStatusCode -ne 400) {
+                        Write-Error $_ -ErrorAction Stop
+                    }
+
+                    Write-Verbose "Microsoft Graph also rejected shortcut creation by destination path inside '$RelativePath'. Creating the shortcut at the OneDrive root, then moving it to the requested folder."
+                    $TemporaryShortcutName = "_odscex-$([Guid]::NewGuid().ToString('N'))"
+                    $CreateRequest.Resource = $RootCreateResource
+                    $CreateRequest.Body = @{
+                        name = $TemporaryShortcutName
+                        remoteItem = $RemoteItem
+                        '@microsoft.graph.conflictBehavior' = 'fail'
+                    }
+
+                    $ShortcutResponse = Invoke-odscexApiRequest @CreateRequest
+                    $MoveShortcutToDestination = $true
+                }
             }
 
             if (!($ShortcutResponse)) {
