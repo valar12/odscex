@@ -208,28 +208,42 @@ function Set-odscexShortcutState {
                 Write-Error "Error creating OneDrive shortcut '$($ShortcutName)' for ${User}." -ErrorAction Stop
             }
 
-            $RenameRequest = @{
-                Resource = "users/${User}/drive/items/$($ShortcutResponse.id)"
-                Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch
-                Body = if ($MoveShortcutToDestination) {
-                    @{
-                        name = $ShortcutName
-                        parentReference = @{
-                            id = $DestinationFolder.id
-                        }
-                    } | ConvertTo-Json -Depth 10
-                } else {
-                    @{ name = $ShortcutName } | ConvertTo-Json -Depth 10
-                }
-            }
             try {
+                if ($MoveShortcutToDestination) {
+                    $DestinationParentReference = @{
+                        id = $DestinationFolder.id
+                    }
+
+                    $DestinationDriveId = $DestinationFolder.parentReference.driveId
+                    if (-not $DestinationDriveId) {
+                        $DestinationDriveId = $OneDriveRoot.parentReference.driveId
+                    }
+                    if ($DestinationDriveId) {
+                        $DestinationParentReference.driveId = $DestinationDriveId
+                    }
+
+                    $MoveRequest = @{
+                        Resource = "users/${User}/drive/items/$($ShortcutResponse.id)"
+                        Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch
+                        Body = @{
+                            parentReference = $DestinationParentReference
+                        } | ConvertTo-Json -Depth 10
+                    }
+                    $ShortcutResponse = Invoke-odscexApiRequest @MoveRequest -ErrorAction Stop
+                }
+
+                $RenameRequest = @{
+                    Resource = "users/${User}/drive/items/$($ShortcutResponse.id)"
+                    Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch
+                    Body = @{ name = $ShortcutName } | ConvertTo-Json -Depth 10
+                }
                 $ShortcutResponse = Invoke-odscexApiRequest @RenameRequest -ErrorAction Stop
             } catch {
                 if ($MoveShortcutToDestination) {
                     try {
                         Invoke-odscexApiRequest -Resource "users/${User}/drive/items/$($ShortcutResponse.id)" -Method ([Microsoft.PowerShell.Commands.WebRequestMethod]::Delete) -ErrorAction Stop | Out-Null
                     } catch {
-                        Write-Verbose "Unable to clean up temporary shortcut '$($ShortcutResponse.id)' after move failure. $($_.Exception.Message)"
+                        Write-Verbose "Unable to clean up temporary shortcut '$($ShortcutResponse.id)' after fallback move or rename failure. $($_.Exception.Message)"
                     }
                 }
 
