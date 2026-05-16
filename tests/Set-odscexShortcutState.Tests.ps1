@@ -7,8 +7,10 @@ BeforeAll {
 }
 
 Describe 'Set-odscexShortcutState' {
-    It 'moves a fallback-created shortcut before renaming when Graph rejects direct nested creation' {
+    It 'retries moving a fallback-created shortcut before renaming when Graph rejects direct nested creation' {
         $script:Requests = [System.Collections.Generic.List[object]]::new()
+        $script:MovePatchAttempts = 0
+        $script:SleepSeconds = [System.Collections.Generic.List[int]]::new()
 
         function Resolve-odscexShortcutTarget {
             [pscustomobject]@{
@@ -30,6 +32,12 @@ Describe 'Set-odscexShortcutState' {
                 id = 'destination-folder'
                 parentReference = [pscustomobject]@{ driveId = 'user-drive' }
             }
+        }
+
+        function Start-Sleep {
+            param([int] $Seconds)
+
+            $script:SleepSeconds.Add($Seconds) | Out-Null
         }
 
         function Invoke-odscexApiRequest {
@@ -54,6 +62,14 @@ Describe 'Set-odscexShortcutState' {
             }
 
             if ($Resource -eq 'drives/user-drive/items/temporary-shortcut' -and $Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch) {
+                $RequestBody = $Body | ConvertFrom-Json
+                if ($RequestBody.parentReference) {
+                    $script:MovePatchAttempts++
+                    if ($script:MovePatchAttempts -lt 3) {
+                        throw 'StatusCode: 400'
+                    }
+                }
+
                 return [pscustomobject]@{ id = 'temporary-shortcut' }
             }
         }
@@ -61,15 +77,19 @@ Describe 'Set-odscexShortcutState' {
         Set-odscexShortcutState -Uri 'https://contoso.sharepoint.com' -DocumentLibrary 'Documents' -FolderPath '2025-06-25' -RelativePath 'Shortcuts' -UserPrincipalName 'user@contoso.com' -Confirm:$false | Out-Null
 
         $PatchRequests = @($script:Requests | Where-Object { $_.Method -eq [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch })
-        $PatchRequests | Should -HaveCount 2
-        $PatchRequests[0].Resource | Should -Be 'drives/user-drive/items/temporary-shortcut'
-        $PatchRequests[1].Resource | Should -Be 'drives/user-drive/items/temporary-shortcut'
+        $PatchRequests | Should -HaveCount 4
+        $script:SleepSeconds.ToArray() | Should -Be @(2, 4)
 
-        $MoveBody = $PatchRequests[0].Body | ConvertFrom-Json
-        $MoveBody.parentReference.id | Should -Be 'destination-folder'
-        $MoveBody.PSObject.Properties.Name | Should -Not -Contain 'name'
+        $MoveRequests = @($PatchRequests | Select-Object -First 3)
+        foreach ($MoveRequest in $MoveRequests) {
+            $MoveRequest.Resource | Should -Be 'drives/user-drive/items/temporary-shortcut'
+            $MoveBody = $MoveRequest.Body | ConvertFrom-Json
+            $MoveBody.parentReference.id | Should -Be 'destination-folder'
+            $MoveBody.PSObject.Properties.Name | Should -Not -Contain 'name'
+        }
 
-        $RenameBody = $PatchRequests[1].Body | ConvertFrom-Json
+        $PatchRequests[3].Resource | Should -Be 'drives/user-drive/items/temporary-shortcut'
+        $RenameBody = $PatchRequests[3].Body | ConvertFrom-Json
         $RenameBody.name | Should -Be '2025-06-25'
         $RenameBody.PSObject.Properties.Name | Should -Not -Contain 'parentReference'
     }

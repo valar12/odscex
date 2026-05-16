@@ -242,7 +242,26 @@ function Set-odscexShortcutState {
                             }
                         } | ConvertTo-Json -Depth 10
                     }
-                    $ShortcutResponse = Invoke-odscexApiRequest @MoveRequest -ErrorAction Stop
+
+                    $MoveAttempt = 0
+                    $MoveMaxRetryCount = 5
+                    while ($true) {
+                        try {
+                            $ShortcutResponse = Invoke-odscexApiRequest @MoveRequest -ErrorAction Stop
+                            break
+                        } catch {
+                            $MoveAttempt++
+                            $StatusCode = Get-odscexGraphStatusCode -ErrorRecord $_
+                            if (($StatusCode -eq 400) -and ($MoveAttempt -le $MoveMaxRetryCount)) {
+                                $Delay = [Math]::Min(30, [int](2 * [Math]::Pow(2, ($MoveAttempt - 1))))
+                                Write-Verbose "Microsoft Graph returned HTTP 400 while moving newly created shortcut '$($ShortcutResponse.id)' into '$RelativePath'. Retrying in $Delay seconds because OneDrive can take time to make a new shortcut movable."
+                                Start-Sleep -Seconds $Delay
+                                continue
+                            }
+
+                            Write-Error $_ -ErrorAction Stop
+                        }
+                    }
                 }
 
                 $ShortcutResourceById = if ($DestinationDriveId) {
