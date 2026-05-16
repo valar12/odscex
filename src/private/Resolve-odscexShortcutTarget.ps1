@@ -118,6 +118,8 @@ function Resolve-odscexShortcutTarget {
     $ResolvedShortcutName = if ($DocumentLibrary) { $DocumentLibrary } else { $DocumentLibraryResponse.displayName }
     $ItemUniqueId = 'root'
     $ItemUniqueName = $null
+    $TargetDriveId = $null
+    $TargetDriveItemId = $null
 
     if ($FolderPath) {
         try {
@@ -151,11 +153,19 @@ function Resolve-odscexShortcutTarget {
             Write-Error "Unable to resolve folder '$FolderPath' in document library '$ResolvedLibraryName' on site '$Uri'. $($_.Exception.Message)" -ErrorAction Stop
         }
 
-        if (!($DriveItem) -or [string]::IsNullOrWhiteSpace($DriveItem.sharepointIds.listItemUniqueId)) {
-            Write-Error "Error retrieving document library folder '$FolderPath'. Microsoft Graph did not return SharePoint ids for the folder." -ErrorAction Stop
+        if (!($DriveItem) -or [string]::IsNullOrWhiteSpace($DriveItem.id)) {
+            Write-Error "Error retrieving document library folder '$FolderPath'. Microsoft Graph did not return a drive item id for the folder." -ErrorAction Stop
         }
 
-        $ItemUniqueId = $DriveItem.sharepointIds.listItemUniqueId
+        if ($DriveItem.sharepointIds -and (-not [string]::IsNullOrWhiteSpace($DriveItem.sharepointIds.listItemUniqueId))) {
+            $ItemUniqueId = $DriveItem.sharepointIds.listItemUniqueId
+        } else {
+            $ItemUniqueId = $null
+            Write-Verbose "Microsoft Graph did not return SharePoint ids for folder '$FolderPath'. Falling back to the drive item reference."
+        }
+
+        $TargetDriveId = $ListDrive.id
+        $TargetDriveItemId = $DriveItem.id
         $ItemUniqueName = $DriveItem.name
         $ResolvedShortcutName = $ItemUniqueName
     }
@@ -170,5 +180,7 @@ function Resolve-odscexShortcutTarget {
         DefaultShortcutName = $ResolvedShortcutName
         ItemUniqueId = $ItemUniqueId
         ItemUniqueName = $ItemUniqueName
+        DriveId = $TargetDriveId
+        DriveItemId = $TargetDriveItemId
     }
 }

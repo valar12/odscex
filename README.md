@@ -225,8 +225,11 @@ provisioned at least once, and the account has a SharePoint/OneDrive license. If
 user's sign-in name recently changed, retry with `-UserObjectId` so Graph does not
 depend on the UPN alias. For target-side 404 errors, verify that `-Uri` is the site URL
 (not a library or folder URL), `-DocumentLibrary` is the library display name, and
-`-FolderPath` is relative to the library root. You can validate access before creating
-the shortcut:
+`-FolderPath` is relative to the library root. For example, if the browser URL is
+`https://contoso.sharepoint.com/Shared%20Documents/Forms/AllItems.aspx`, use the site
+URL `https://contoso.sharepoint.com`, the library display name `Documents`, and a
+folder path such as `2025-06-25` or `Department/Policies`. You can validate access
+before creating the shortcut:
 
 ```powershell
 Test-odscexPermission -Uri 'https://contoso.sharepoint.com/sites/WorkingSite' -DocumentLibrary 'Documents' -UserPrincipalName 'user@contoso.com'

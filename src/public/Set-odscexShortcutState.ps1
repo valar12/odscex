@@ -97,11 +97,18 @@ function Set-odscexShortcutState {
 
         if ($ExistingShortcut) {
             $ExistingIds = $ExistingShortcut.remoteItem.sharepointIds
-            $MatchesTarget = $ExistingShortcut.remoteItem -and
+            $MatchesTargetSharePointIds = $Target.ItemUniqueId -and
+                $ExistingShortcut.remoteItem -and
                 ($ExistingIds.listId -eq $Target.DocumentLibraryId) -and
                 ($ExistingIds.listItemUniqueId -eq $Target.ItemUniqueId) -and
                 ($ExistingIds.siteId -eq $Target.SiteId) -and
                 ($ExistingIds.webId -eq $Target.WebId)
+            $MatchesTargetDriveItem = $Target.DriveId -and
+                $Target.DriveItemId -and
+                $ExistingShortcut.remoteItem -and
+                ($ExistingShortcut.remoteItem.id -eq $Target.DriveItemId) -and
+                ($ExistingShortcut.remoteItem.parentReference.driveId -eq $Target.DriveId)
+            $MatchesTarget = $MatchesTargetSharePointIds -or $MatchesTargetDriveItem
 
             if ($MatchesTarget) {
                 return Write-odscexResult -User $User -ShortcutName $ShortcutName -Action 'None' -Status 'Compliant' -Response $ExistingShortcut -Message 'Shortcut already points to the requested target.' -TargetSite $Uri -TargetLibrary $DocumentLibrary -TargetFolderPath $FolderPath
@@ -131,20 +138,33 @@ function Set-odscexShortcutState {
 
         $OneDriveRoot = Resolve-odscexOneDriveRoot -User $User
 
+        if ($Target.ItemUniqueId) {
+            $RemoteItem = @{
+                sharepointIds = @{
+                    listId = $Target.DocumentLibraryId
+                    listItemUniqueId = $Target.ItemUniqueId
+                    siteId = $Target.SiteId
+                    siteUrl = $Target.SiteUrl
+                    webId = $Target.WebId
+                }
+            }
+        } elseif ($Target.DriveId -and $Target.DriveItemId) {
+            $RemoteItem = @{
+                id = $Target.DriveItemId
+                parentReference = @{
+                    driveId = $Target.DriveId
+                }
+            }
+        } else {
+            Write-Error "Unable to build shortcut target reference for '$ShortcutName'. Microsoft Graph did not return SharePoint ids or a drive item reference for the target." -ErrorAction Stop
+        }
+
         $CreateRequest = @{
             Resource = "users/${User}/drive/items/$($OneDriveRoot.id)/children"
             Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Post
             Body = @{
                 name = $ShortcutName
-                remoteItem = @{
-                    sharepointIds = @{
-                        listId = $Target.DocumentLibraryId
-                        listItemUniqueId = $Target.ItemUniqueId
-                        siteId = $Target.SiteId
-                        siteUrl = $Target.SiteUrl
-                        webId = $Target.WebId
-                    }
-                }
+                remoteItem = $RemoteItem
                 '@microsoft.graph.conflictBehavior' = if ($ConflictAction -eq 'Rename') { 'rename' } else { 'fail' }
             } | ConvertTo-Json -Depth 20
         }
