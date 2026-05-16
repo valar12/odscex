@@ -159,7 +159,14 @@ function Set-odscexShortcutState {
             Write-Error "Unable to build shortcut target reference for '$ShortcutName'. Microsoft Graph did not return SharePoint ids or a drive item reference for the target." -ErrorAction Stop
         }
 
-        $RootCreateResource = "users/${User}/drive/items/$($OneDriveRoot.id)/children"
+        $OneDriveDriveId = $OneDriveRoot.parentReference.driveId
+        # Prefer drive-scoped item URLs after the destination drive is known. Microsoft Graph can
+        # reject remoteItem create/move requests that are routed through /users/{id}/drive.
+        $RootCreateResource = if ($OneDriveDriveId) {
+            "drives/${OneDriveDriveId}/items/$($OneDriveRoot.id)/children"
+        } else {
+            "users/${User}/drive/items/$($OneDriveRoot.id)/children"
+        }
         $CreateRequest = @{
             Resource = $RootCreateResource
             Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Post
@@ -172,6 +179,7 @@ function Set-odscexShortcutState {
 
         if ($PSCmdlet.ShouldProcess("${User}'s OneDrive", "Creating shortcut '$ShortcutName'")) {
             $DestinationFolder = $null
+            $DestinationDriveId = $null
             $MoveShortcutToDestination = $false
             if ($RelativePath) {
                 $FolderResponse = Resolve-odscexDriveFolderPath -User $User -RelativePath $RelativePath -Create
@@ -180,7 +188,16 @@ function Set-odscexShortcutState {
                 }
 
                 $DestinationFolder = $FolderResponse
-                $CreateRequest.Resource = "users/${User}/drive/items/$($FolderResponse.id)/children"
+                $DestinationDriveId = $DestinationFolder.parentReference.driveId
+                if (-not $DestinationDriveId) {
+                    $DestinationDriveId = $OneDriveDriveId
+                }
+
+                $CreateRequest.Resource = if ($DestinationDriveId) {
+                    "drives/${DestinationDriveId}/items/$($FolderResponse.id)/children"
+                } else {
+                    "users/${User}/drive/items/$($FolderResponse.id)/children"
+                }
             }
 
             try {
@@ -208,28 +225,65 @@ function Set-odscexShortcutState {
                 Write-Error "Error creating OneDrive shortcut '$($ShortcutName)' for ${User}." -ErrorAction Stop
             }
 
-            $RenameRequest = @{
-                Resource = "users/${User}/drive/items/$($ShortcutResponse.id)"
-                Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch
-                Body = if ($MoveShortcutToDestination) {
-                    @{
-                        name = $ShortcutName
-                        parentReference = @{
-                            id = $DestinationFolder.id
-                        }
-                    } | ConvertTo-Json -Depth 10
-                } else {
-                    @{ name = $ShortcutName } | ConvertTo-Json -Depth 10
-                }
-            }
             try {
+                if ($MoveShortcutToDestination) {
+                    $ShortcutResourceById = if ($DestinationDriveId) {
+                        "drives/${DestinationDriveId}/items/$($ShortcutResponse.id)"
+                    } else {
+                        "users/${User}/drive/items/$($ShortcutResponse.id)"
+                    }
+
+                    $MoveRequest = @{
+                        Resource = $ShortcutResourceById
+                        Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch
+                        Body = @{
+                            parentReference = @{
+                                id = $DestinationFolder.id
+                            }
+                        } | ConvertTo-Json -Depth 10
+                    }
+
+                    $MoveAttempt = 0
+                    $MoveMaxRetryCount = 5
+                    while ($true) {
+                        try {
+                            $ShortcutResponse = Invoke-odscexApiRequest @MoveRequest -ErrorAction Stop
+                            break
+                        } catch {
+                            $MoveAttempt++
+                            $StatusCode = Get-odscexGraphStatusCode -ErrorRecord $_
+                            if (($StatusCode -eq 400) -and ($MoveAttempt -le $MoveMaxRetryCount)) {
+                                $Delay = [Math]::Min(30, [int](2 * [Math]::Pow(2, ($MoveAttempt - 1))))
+                                Write-Verbose "Microsoft Graph returned HTTP 400 while moving newly created shortcut '$($ShortcutResponse.id)' into '$RelativePath'. Retrying in $Delay seconds because OneDrive can take time to make a new shortcut movable."
+                                Start-Sleep -Seconds $Delay
+                                continue
+                            }
+
+                            Write-Error $_ -ErrorAction Stop
+                        }
+                    }
+                }
+
+                $ShortcutResourceById = if ($DestinationDriveId) {
+                    "drives/${DestinationDriveId}/items/$($ShortcutResponse.id)"
+                } elseif ($OneDriveDriveId) {
+                    "drives/${OneDriveDriveId}/items/$($ShortcutResponse.id)"
+                } else {
+                    "users/${User}/drive/items/$($ShortcutResponse.id)"
+                }
+
+                $RenameRequest = @{
+                    Resource = $ShortcutResourceById
+                    Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Patch
+                    Body = @{ name = $ShortcutName } | ConvertTo-Json -Depth 10
+                }
                 $ShortcutResponse = Invoke-odscexApiRequest @RenameRequest -ErrorAction Stop
             } catch {
                 if ($MoveShortcutToDestination) {
                     try {
-                        Invoke-odscexApiRequest -Resource "users/${User}/drive/items/$($ShortcutResponse.id)" -Method ([Microsoft.PowerShell.Commands.WebRequestMethod]::Delete) -ErrorAction Stop | Out-Null
+                        Invoke-odscexApiRequest -Resource $ShortcutResourceById -Method ([Microsoft.PowerShell.Commands.WebRequestMethod]::Delete) -ErrorAction Stop | Out-Null
                     } catch {
-                        Write-Verbose "Unable to clean up temporary shortcut '$($ShortcutResponse.id)' after move failure. $($_.Exception.Message)"
+                        Write-Verbose "Unable to clean up temporary shortcut '$($ShortcutResponse.id)' after fallback move or rename failure. $($_.Exception.Message)"
                     }
                 }
 
