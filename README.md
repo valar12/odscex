@@ -1,6 +1,6 @@
 # odscex PowerShell Module
 
-[![GitHub Release](https://badge.fury.io/gh/valar12%2Fodscex.svg)](https://github.com/valar12/odscex/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/valar12/odscex?label=GitHub%20Release)](https://github.com/valar12/odscex/releases)
 [![PowerShell Gallery Release](https://img.shields.io/powershellgallery/v/odscex)](https://www.powershellgallery.com/packages/odscex)
 [![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/valar12/odscex/blob/main/LICENSE.md)
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/valar12/odscex)](https://github.com/valar12/odscex/commits/main)
